@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+# Update the host below to match `site` in astro.config.mjs before deploying.
+Sitemap: https://voltacar.example.com/sitemap-index.xml

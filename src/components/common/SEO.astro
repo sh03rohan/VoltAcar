@@ -1,0 +1,63 @@
+---
+import { site } from '../../config/site';
+
+interface Props {
+  title: string;
+  description?: string;
+  /** Path or absolute URL to the social share image. */
+  image?: string;
+  /** Set on pages that should not be indexed. */
+  noindex?: boolean;
+  /** 'article' for blog posts, 'website' otherwise. */
+  type?: 'website' | 'article';
+  publishedTime?: Date;
+  author?: string;
+}
+
+const {
+  title,
+  description = site.description,
+  image = site.ogImage,
+  noindex = false,
+  type = 'website',
+  publishedTime,
+  author,
+} = Astro.props;
+
+// Astro.site is undefined if `site` is missing from astro.config.mjs, so fall
+// back to the configured URL rather than emitting a broken canonical.
+const base = Astro.site ?? new URL(site.url);
+const canonical = new URL(Astro.url.pathname, base).href;
+const ogImage = new URL(image, base).href;
+
+// The home page uses the bare brand name; every other page is suffixed.
+const fullTitle = title === site.name ? title : `${title} | ${site.name}`;
+---
+
+<title>{fullTitle}</title>
+<meta name="description" content={description} />
+<link rel="canonical" href={canonical} />
+{noindex && <meta name="robots" content="noindex, nofollow" />}
+
+<meta property="og:type" content={type} />
+<meta property="og:site_name" content={site.name} />
+<meta property="og:title" content={fullTitle} />
+<meta property="og:description" content={description} />
+<meta property="og:url" content={canonical} />
+<meta property="og:image" content={ogImage} />
+<meta property="og:locale" content={site.locale} />
+
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content={fullTitle} />
+<meta name="twitter:description" content={description} />
+<meta name="twitter:image" content={ogImage} />
+
+{
+  type === 'article' && publishedTime && (
+    <meta
+      property="article:published_time"
+      content={publishedTime.toISOString()}
+    />
+  )
+}
+{type === 'article' && author && <meta property="article:author" content={author} />}

@@ -1,0 +1,46 @@
+---
+// Placeholder — replaced section by section in Phase 1 (Home).
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { site } from '../config/site';
+---
+
+<BaseLayout title={site.name} description={site.description}>
+  <section class="scaffold container">
+    <p class="eyebrow">Phase 0 complete</p>
+    <h1>{site.name}</h1>
+    <p class="lead">{site.description}</p>
+    <p class="note">
+      Design tokens, base layout, SEO, and project structure are in place. The
+      Home page is built section by section from here.
+    </p>
+  </section>
+</BaseLayout>
+
+<style>
+  .scaffold {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-24);
+    align-items: flex-start;
+    padding-block: var(--section-gap);
+    max-width: 46rem;
+  }
+
+  .eyebrow {
+    font-size: var(--fs-small);
+    font-weight: var(--fw-semibold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--c-text-soft);
+  }
+
+  .lead {
+    font-size: var(--fs-lead);
+  }
+
+  .note {
+    color: var(--c-text-soft);
+    border-left: 3px solid var(--c-primary);
+    padding-left: var(--sp-16);
+  }
+</style>

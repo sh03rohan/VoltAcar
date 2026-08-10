@@ -1,0 +1,122 @@
+/* ==========================================================================
+   VoltACar — Design tokens
+   Every value here is pulled from the Figma file "Transportation VoltACar"
+   (Style Guide section #244:203), not invented. Change values here to
+   re-theme the whole template.
+   ========================================================================== */
+
+:root {
+  /* ---------- Color -------------------------------------------------------
+     Named after their role in the Style Guide swatch panel (#244:283).      */
+  --c-primary: #f3fe64; /* lime accent — buttons, highlights, team cards     */
+  --c-ink: #131400; /* "Text Color 950" — body text, dark sections, footer   */
+  --c-cream: #f4f3ef; /* "Text Color 800" — page background, text on dark    */
+  --c-muted: #6e6e68; /* "Text Color 400" — secondary body copy             */
+  --c-steel: #84a2ba; /* "Text Color 300" — heading highlight, card divider  */
+  --c-white: #ffffff;
+
+  /* In use across the pages but not in the swatch panel. */
+  --c-band: #303030; /* dark quote / CTA band                               */
+  --c-banner: #e3e3df; /* light CTA banner background                       */
+  --c-prose: #64645e; /* privacy policy body copy                           */
+  --c-surface: #fefefe; /* dropdown background                              */
+
+  /* Semantic aliases — prefer these in components. */
+  --c-bg: var(--c-cream);
+  --c-text: var(--c-ink);
+  --c-text-soft: var(--c-muted);
+  --c-on-dark: var(--c-cream);
+  --c-border: rgba(19, 20, 0, 0.12);
+
+  /* ---------- Typography --------------------------------------------------
+     Single family. Inter/Roboto appear only in leftover UI-kit nodes in the
+     Figma and are deliberately not used here.                              */
+  --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system,
+    'Segoe UI', Roboto, sans-serif;
+  --font-brand: 'Figtree', var(--font-sans); /* wordmark only */
+
+  --fw-light: 300;
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+
+  /* Fluid scale. The max of each clamp is the exact Figma desktop size; the
+     min is the deliberate mobile size (no Figma mobile frames exist). */
+  --fs-h1: clamp(2.5rem, 1.29rem + 5.36vw, 4.5rem); /* 40 → 72 */
+  --fs-h2: clamp(2.25rem, 1.4rem + 3.75vw, 4rem); /* 36 → 64 */
+  --fs-h3: clamp(2rem, 1.4rem + 2.68vw, 3.25rem); /* 32 → 52 */
+  --fs-h4: clamp(1.75rem, 1.51rem + 1.07vw, 2.25rem); /* 28 → 36 */
+  --fs-h5: clamp(1.5rem, 1.35rem + 0.67vw, 2rem); /* 24 → 32 */
+  --fs-h6: clamp(1.25rem, 1.17rem + 0.33vw, 1.5rem); /* 20 → 24 */
+  --fs-lead: clamp(1.125rem, 1.06rem + 0.27vw, 1.25rem); /* 18 → 20 */
+  --fs-body: 1rem; /* 16 */
+  --fs-small: 0.875rem; /* 14 */
+
+  --lh-tight: 1; /* H1–H3 in Figma  */
+  --lh-heading: 1.3; /* H4–H6           */
+  --lh-body: 1.5;
+
+  --ls-tight: -0.02em; /* H2/H3 carry -2 tracking in the Style Guide */
+  --ls-none: 0;
+
+  /* ---------- Spacing -----------------------------------------------------
+     The rhythm actually used by the Figma auto-layout frames.              */
+  --sp-2: 0.125rem;
+  --sp-8: 0.5rem;
+  --sp-10: 0.625rem;
+  --sp-12: 0.75rem;
+  --sp-14: 0.875rem;
+  --sp-16: 1rem;
+  --sp-20: 1.25rem;
+  --sp-24: 1.5rem;
+  --sp-32: 2rem;
+  --sp-48: 3rem;
+  --sp-80: 5rem;
+  --sp-90: 5.625rem;
+  --sp-151: 9.4375rem; /* alternating block column gap */
+  --sp-180: 11.25rem; /* gap between major page sections */
+
+  /* Section rhythm collapses on smaller screens. */
+  --section-gap: clamp(5rem, 2.6rem + 10.7vw, 11.25rem); /* 80 → 180 */
+  --section-gap-sm: clamp(3rem, 2.05rem + 4.2vw, 5rem); /* 48 → 80 */
+
+  /* ---------- Layout ------------------------------------------------------
+     Figma frames are 1600 wide with a 1400 container → 100px gutters.      */
+  --container: 87.5rem; /* 1400 */
+  --frame: 100rem; /* 1600 */
+  --gutter: clamp(1.25rem, -0.31rem + 6.96vw, 6.25rem); /* 20 → 100 */
+  --banner-h: 48.75rem; /* 780 — hero and CTA bands */
+
+  /* ---------- Radius ------------------------------------------------------ */
+  --r-xs: 2px;
+  --r-sm: 4px; /* cards, images */
+  --r-md: 8px; /* dropdown      */
+  --r-lg: 12px; /* form inputs   */
+  --r-pill: 100px;
+  --r-circle: 80px; /* button icon circle */
+
+  /* ---------- Elevation --------------------------------------------------- */
+  --shadow-lg: 0 10px 15px -3px rgba(17, 17, 17, 0.07),
+    0 4px 7px 0 rgba(17, 17, 17, 0.05);
+  --shadow-card: -4px -4px 6px 0 rgba(0, 0, 0, 0.04);
+
+  /* ---------- Motion ------------------------------------------------------ */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-fast: 200ms;
+  --dur: 400ms;
+  --dur-slow: 700ms;
+
+  --z-header: 100;
+  --z-dropdown: 200;
+  --z-drawer: 300;
+}
+
+/* Breakpoints are documented here for reference; CSS custom properties
+   cannot be used in media queries, so components hard-code these values.
+     xl  1600   frame width
+     lg  1200   container starts shrinking
+     md   992   two-column layouts collapse
+     sm   768   mobile nav, single column
+     xs   480   tightest layout                                            */
