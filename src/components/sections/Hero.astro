@@ -1,0 +1,350 @@
+---
+import { Image } from 'astro:assets';
+import Button from '../common/Button.astro';
+import heroCar from '../../assets/images/hero-car.webp';
+
+/**
+ * Home hero — Figma #13:82 (1600x800).
+ *
+ * The car render sits behind a radial scrim; the copy block starts 234px
+ * down at 684px wide, and the four stats sit on a 1400px space-between row
+ * 728px down.
+ */
+const stats = [
+  { value: '500 km', label: 'Range on a single charge' },
+  { value: '30 minutes', label: 'Fast charge to 80%' },
+  { value: '0–100 km/h', label: 'Smooth driving experience' },
+  { value: '20+', label: 'Intelligent safety features' },
+];
+---
+
+<section class="hero on-dark" data-hero>
+  <div class="hero__media">
+    <Image
+      src={heroCar}
+      alt=""
+      widths={[768, 1280, 1920, 2600]}
+      sizes="100vw"
+      loading="eager"
+      fetchpriority="high"
+      class="hero__image"
+      data-hero-image
+    />
+    <div class="hero__scrim"></div>
+  </div>
+
+  <div class="hero__inner">
+    <div class="hero__content">
+      <div class="hero__copy">
+        <h1 class="hero__title" data-hero-title>
+          When <span class="hero__title-accent">Innovation</span> Meets the Road
+        </h1>
+        <p class="hero__lead" data-hero-lead>
+          Meet VoltACar — a smarter, cleaner, and fully electric way to move.
+        </p>
+      </div>
+      <div class="hero__cta" data-hero-cta>
+        <Button label="Take a Test Drive" href="/test-drive" variant="light" />
+      </div>
+    </div>
+
+    <ul class="hero__stats" role="list">
+      {
+        stats.map((stat) => (
+          <li class="hero__stat" data-hero-stat>
+            <span class="hero__stat-value">{stat.value}</span>
+            <span class="hero__stat-label">{stat.label}</span>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</section>
+
+<style>
+  .hero {
+    position: relative;
+    display: flex;
+    min-height: 50rem; /* 800 */
+    color: var(--c-cream);
+    overflow: hidden;
+  }
+
+  /* ---------- Media ---------- */
+
+  .hero__media {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+  }
+
+  /* Default: a normal cover fit, framed on the car. */
+  .hero__image {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 58% 45%;
+  }
+
+  /* Figma #14:86 places the render 2033px wide (127% of the 1600 frame) at
+     x=0, y=-118. Reproducing that exactly matters: it frames the car right of
+     centre and keeps the bright sun on the right of the source cropped out,
+     which is what makes the scene read as dark.
+
+     The proportional crop only covers an 800px-tall hero once the viewport is
+     wide enough (1.27 x vw / 1.929 aspect >= 918px), hence the 1400px gate. */
+  @media (min-width: 1400px) {
+    .hero__image {
+      inset: auto;
+      top: -14.75%; /* -118 / 800 */
+      left: 0;
+      width: 127%;
+      height: auto;
+      max-width: none;
+      object-fit: fill;
+    }
+  }
+
+  /* radial-gradient(circle at 57% 56%, ...) — Figma #14:86 */
+  .hero__scrim {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+      circle at 57% 56%,
+      rgba(19, 20, 0, 0) 0%,
+      rgba(19, 20, 0, 0.43) 29%,
+      rgba(19, 20, 0, 0.83) 100%
+    );
+  }
+
+  /* ---------- Layout ---------- */
+
+  .hero__inner {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: var(--sp-80);
+    width: 100%;
+    max-width: calc(var(--container) + var(--gutter) * 2);
+    margin-inline: auto;
+    /* Figma: copy starts at y=234, stats end 24px above the frame edge. */
+    padding: 14.625rem var(--gutter) var(--sp-24);
+  }
+
+  .hero__content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--sp-48); /* Figma #15:104 */
+    max-width: 42.75rem; /* 684 */
+  }
+
+  .hero__copy {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-24); /* Figma #15:91 */
+  }
+
+  .hero__title {
+    font-size: var(--fs-h1);
+    font-weight: var(--fw-bold);
+    line-height: var(--lh-tight);
+    letter-spacing: var(--ls-none);
+    text-wrap: balance;
+  }
+
+  .hero__title-accent {
+    color: var(--c-primary);
+  }
+
+  .hero__lead {
+    max-width: 23rem; /* 368 */
+    font-size: var(--fs-lead);
+    line-height: var(--lh-body);
+  }
+
+  /* ---------- Stats ---------- */
+
+  .hero__stats {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--sp-32);
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Figma #19:135: the first item hugs its text, the other three are fixed at
+     207px, which is what produces the row's uneven-looking spacing. */
+  .hero__stat {
+    display: flex;
+    flex-direction: column;
+    flex: 0 0 auto;
+    width: 12.9375rem; /* 207 */
+    color: var(--c-white);
+    font-size: var(--fs-body);
+    line-height: var(--lh-body);
+  }
+
+  .hero__stat:first-child {
+    width: auto;
+  }
+
+  .hero__stat-value {
+    font-weight: var(--fw-medium);
+  }
+
+  .hero__stat-label {
+    font-weight: var(--fw-regular);
+  }
+
+  /* ---------- Responsive ---------- */
+
+  /* Below the desktop crop the car drifts under the copy, so add a directional
+     wash to keep the headline above contrast minimums. The Figma frame does
+     not need this because the copy sits over open background there. */
+  @media (max-width: 1200px) {
+    .hero__scrim {
+      background:
+        linear-gradient(
+          to right,
+          rgba(19, 20, 0, 0.78) 0%,
+          rgba(19, 20, 0, 0.45) 45%,
+          rgba(19, 20, 0, 0.05) 75%
+        ),
+        radial-gradient(
+          circle at 57% 56%,
+          rgba(19, 20, 0, 0) 0%,
+          rgba(19, 20, 0, 0.43) 29%,
+          rgba(19, 20, 0, 0.83) 100%
+        );
+    }
+  }
+
+  @media (max-width: 1100px) {
+    .hero__inner {
+      padding-top: 11rem;
+    }
+  }
+
+  @media (max-width: 992px) {
+    .hero__stats {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--sp-24) var(--sp-32);
+    }
+
+    .hero__stat {
+      max-width: none;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .hero {
+      min-height: 100svh;
+    }
+
+    .hero__inner {
+      padding-top: 9rem;
+      gap: var(--sp-48);
+    }
+
+    .hero__image {
+      object-position: 62% 45%;
+    }
+
+    /* On a tall narrow crop the copy sits directly over the car, so the wash
+       becomes vertical instead of directional. */
+    .hero__scrim {
+      background:
+        linear-gradient(
+          to bottom,
+          rgba(19, 20, 0, 0.82) 0%,
+          rgba(19, 20, 0, 0.5) 45%,
+          rgba(19, 20, 0, 0.72) 100%
+        ),
+        radial-gradient(
+          circle at 62% 50%,
+          rgba(19, 20, 0, 0.1) 0%,
+          rgba(19, 20, 0, 0.5) 55%,
+          rgba(19, 20, 0, 0.8) 100%
+        );
+    }
+
+    .hero__lead {
+      max-width: 28rem;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .hero__stats {
+      grid-template-columns: 1fr;
+      gap: var(--sp-16);
+    }
+  }
+</style>
+
+<script>
+  import { gsap, prefersReducedMotion } from '../../scripts/motion';
+
+  const hero = document.querySelector<HTMLElement>('[data-hero]');
+
+  if (hero && !prefersReducedMotion()) {
+    const title = hero.querySelector('[data-hero-title]');
+    const lead = hero.querySelector('[data-hero-lead]');
+    const cta = hero.querySelector('[data-hero-cta]');
+    const stats = hero.querySelectorAll('[data-hero-stat]');
+    const image = hero.querySelector<HTMLElement>('[data-hero-image]');
+
+    const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
+
+    // Mask reveal rather than a plain fade — the headline wipes up into view.
+    if (title) {
+      tl.fromTo(
+        title,
+        { clipPath: 'inset(0 0 100% 0)', y: 40 },
+        { clipPath: 'inset(0 0 0% 0)', y: 0, duration: 1.1 },
+      );
+    }
+
+    // Settles back to scale 1 so the resting frame matches the Figma crop
+    // exactly — any residual scale would enlarge the render.
+    if (image) {
+      tl.fromTo(
+        image,
+        { scale: 1.1 },
+        { scale: 1, duration: 1.6, ease: 'power2.out' },
+        0,
+      );
+    }
+
+    if (lead) tl.fromTo(lead, { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.7 }, 0.35);
+    if (cta) tl.fromTo(cta, { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.7 }, 0.5);
+
+    if (stats.length) {
+      tl.fromTo(
+        stats,
+        { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, duration: 0.6, stagger: 0.09 },
+        0.65,
+      );
+    }
+
+    // Gentle parallax: the render drifts slower than the page.
+    if (image) {
+      gsap.to(image, {
+        yPercent: 8,
+        ease: 'none',
+        scrollTrigger: {
+          trigger: hero,
+          start: 'top top',
+          end: 'bottom top',
+          scrub: true,
+        },
+      });
+    }
+  }
+</script>

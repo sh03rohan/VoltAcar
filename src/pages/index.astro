@@ -1,65 +1,28 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Header from '../components/layout/Header.astro';
+import Hero from '../components/sections/Hero.astro';
 import { site } from '../config/site';
 ---
 
 <BaseLayout title={site.name} description={site.description}>
   <Header slot="header" />
 
-  {/* Placeholder standing in for the hero — replaced in Sub-phase 2. */}
-  <section class="hero-placeholder on-dark">
-    <div class="container">
-      <p class="eyebrow">Sub-phase 1</p>
-      <h1>Header &amp; navigation</h1>
-      <p class="lead">
-        The header overlays the dark hero exactly as it does in Figma. Scroll
-        down to see it pin, and narrow the window past 1100px for the drawer.
-      </p>
-    </div>
-  </section>
+  <Hero />
 
+  {/* Remaining Home sections follow in Sub-phase 3 onward. */}
   <section class="filler">
     <div class="container">
-      <p>Scroll region — the hero and the rest of the page follow.</p>
+      <p>Next: the mission statement band.</p>
     </div>
   </section>
 </BaseLayout>
 
 <style>
-  .hero-placeholder {
-    display: flex;
-    align-items: center;
-    min-height: var(--banner-h);
-    padding-block: var(--sp-180) var(--sp-80);
-    background-color: var(--c-ink);
-    color: var(--c-cream);
-  }
-
-  .hero-placeholder .container {
-    display: flex;
-    flex-direction: column;
-    gap: var(--sp-24);
-    align-items: flex-start;
-  }
-
-  .eyebrow {
-    font-size: var(--fs-small);
-    font-weight: var(--fw-semibold);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--c-primary);
-  }
-
-  .lead {
-    max-width: 42rem;
-    font-size: var(--fs-lead);
-  }
-
   .filler {
     display: grid;
     place-items: center;
-    min-height: 150vh;
+    min-height: 60vh;
     color: var(--c-text-soft);
   }
 </style>
