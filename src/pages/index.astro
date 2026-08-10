@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Header from '../components/layout/Header.astro';
+import Footer from '../components/layout/Footer.astro';
 import Hero from '../components/sections/Hero.astro';
 import MissionBand from '../components/sections/MissionBand.astro';
 import AlternatingBlock from '../components/sections/AlternatingBlock.astro';
@@ -79,5 +80,6 @@ import featureRange from '../assets/images/feature-range.webp';
   {/* Figma #91:572 — shared with every other content page */}
   <Newsletter />
 
-  {/* The footer (#91:594) follows in Sub-phase 10. */}
+  {/* Figma #91:594 */}
+  <Footer slot="footer" />
 </BaseLayout>

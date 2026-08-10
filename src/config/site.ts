@@ -5,6 +5,8 @@
  * is hard-coded anywhere else in the project.
  */
 
+import type { SocialIconName } from '../components/common/SocialIcon.astro';
+
 export interface NavLink {
   label: string;
   href: string;
@@ -32,11 +34,17 @@ export const contact = {
   phoneHref: '+48756657768',
 } as const;
 
-export const social = [
-  { label: 'Instagram', href: 'https://instagram.com/' },
-  { label: 'Facebook', href: 'https://facebook.com/' },
-  { label: 'Twitter', href: 'https://twitter.com/' },
-] as const;
+/**
+ * The footer shows all four as icons (#158:1003) and the first three again as
+ * text links in its last column (#91:614), which is why the hrefs live here
+ * rather than being written out twice.
+ */
+export const social: { label: string; href: string; icon: SocialIconName }[] = [
+  { label: 'Instagram', href: 'https://instagram.com/', icon: 'instagram' },
+  { label: 'Facebook', href: 'https://facebook.com/', icon: 'facebook' },
+  { label: 'Twitter', href: 'https://twitter.com/', icon: 'x' },
+  { label: 'YouTube', href: 'https://youtube.com/', icon: 'youtube' },
+];
 
 /** Header navigation. Mirrors the Figma header (#266:194). */
 export const navigation: NavLink[] = [
@@ -68,6 +76,8 @@ export const footerColumns: NavLink[][] = [
     { label: 'Privacy Policy', href: '/privacy-data' },
     { label: '404 error', href: '/404' },
   ],
+  // The design repeats the first three socials here as plain text links.
+  social.slice(0, 3).map(({ label, href }) => ({ label, href })),
 ];
 
 /**
