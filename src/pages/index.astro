@@ -8,6 +8,7 @@ import CarHotspots from '../components/sections/CarHotspots.astro';
 import QuoteBand from '../components/sections/QuoteBand.astro';
 import InteriorFeatures from '../components/sections/InteriorFeatures.astro';
 import CtaSlider from '../components/sections/CtaSlider.astro';
+import Newsletter from '../components/sections/Newsletter.astro';
 import { site } from '../config/site';
 
 import featureAutonomous from '../assets/images/feature-autonomous.webp';
@@ -75,19 +76,8 @@ import featureRange from '../assets/images/feature-range.webp';
   {/* Figma cards #37:40, #55:139, #55:91 — pinned horizontal slider */}
   <CtaSlider />
 
-  {/* Remaining Home sections follow in Sub-phase 9 onward. */}
-  <section class="filler">
-    <div class="container">
-      <p>Next: the newsletter band.</p>
-    </div>
-  </section>
-</BaseLayout>
+  {/* Figma #91:572 — shared with every other content page */}
+  <Newsletter />
 
-<style>
-  .filler {
-    display: grid;
-    place-items: center;
-    min-height: 60vh;
-    color: var(--c-text-soft);
-  }
-</style>
+  {/* The footer (#91:594) follows in Sub-phase 10. */}
+</BaseLayout>

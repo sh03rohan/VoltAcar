@@ -21,6 +21,12 @@
   --c-prose: #64645e; /* privacy policy body copy                           */
   --c-surface: #fefefe; /* dropdown background                              */
 
+  /* Form validation. The Figma has no error state, so these are ours: one for
+     copy sitting on the ink sections, one for the cream ones. Both clear 4.5:1
+     against their intended background. */
+  --c-error: #ff8a75; /* on --c-ink                                          */
+  --c-error-strong: #b3261e; /* on --c-cream                                 */
+
   /* Semantic aliases — prefer these in components. */
   --c-bg: var(--c-cream);
   --c-text: var(--c-ink);

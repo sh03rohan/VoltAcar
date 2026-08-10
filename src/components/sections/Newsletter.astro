@@ -1,0 +1,448 @@
+---
+import { Image } from 'astro:assets';
+import Button from '../common/Button.astro';
+import carImage from '../../assets/images/newsletter-car.webp';
+import { forms, site } from '../../config/site';
+
+/**
+ * Newsletter band — Figma #91:572, the 1600x780 ink band that sits directly
+ * above the footer on every content page.
+ *
+ * Geometry, all measured off the frame render:
+ *   row      #91:577 at (100, 80), 1400 wide, centred, columns 565 / 271 / 564
+ *   heading  #91:579 Plus Jakarta Sans Bold 36 / 1em, cream
+ *   body     #91:580 Regular 16 / 1.5, 445 wide (that width is what produces
+ *            the designed two-line break)
+ *   inputs   #91:587 48 tall, 24 side padding, 1px #6E6E68, fully rounded
+ *   consent  #91:592 Regular 14 / 1.5, 564 wide, #6E6E68
+ *   button   #91:593 the 48px instance of the shared pill — `size="sm"`
+ *   car      #91:573 866x721 centred at y=318, so the band clips it at 462
+ *
+ * The car render carries its own gradients baked in (they fade it into
+ * #131400 top and bottom), which is why it is a flat image rather than an
+ * image plus a scrim: the fade is part of the artwork.
+ *
+ * Font note: the Figma input placeholders are set in Roboto, a leftover from
+ * the UI kit the inputs were copied from. Every other text node in the file is
+ * Plus Jakarta Sans, so they use it too.
+ */
+interface Props {
+  title?: string;
+  body?: string;
+  /** Where the consent line's "Terms and privacy notice." points. */
+  privacyHref?: string;
+}
+
+const {
+  title = 'Join the Adventure',
+  body = 'Stay connected with the latest in electric driving, exclusive offers, and exciting journeys designed just for you!',
+  privacyHref = '/privacy-data',
+} = Astro.props;
+
+/* An empty endpoint is a supported state: the form still validates and still
+   shows its success message, it just never sends. Leaving `action` off
+   entirely (rather than empty) keeps a no-JS submit from reloading the page. */
+const action = forms.newsletter || undefined;
+---
+
+<section class="newsletter on-dark" data-newsletter aria-labelledby="newsletter-title">
+  <div class="container">
+    <div class="newsletter__row">
+      <div class="newsletter__intro" data-animate>
+        <h2 class="newsletter__title" id="newsletter-title">{title}</h2>
+        <p class="newsletter__body">{body}</p>
+      </div>
+
+      <form
+        class="newsletter__form"
+        data-newsletter-form
+        method="post"
+        action={action}
+        data-has-endpoint={action ? 'true' : 'false'}
+        data-animate
+        data-animate-delay="0.12"
+      >
+        <div class="newsletter__fields">
+          <div class="newsletter__inputs">
+            <div class="field">
+              <label class="visually-hidden" for="newsletter-email">Email address</label>
+              <input
+                class="field__input"
+                id="newsletter-email"
+                type="email"
+                name="email"
+                placeholder="Email*"
+                autocomplete="email"
+                required
+                aria-describedby="newsletter-email-msg"
+              />
+              <p class="field__msg" id="newsletter-email-msg"></p>
+            </div>
+
+            <div class="field">
+              <label class="visually-hidden" for="newsletter-zip">Zip code</label>
+              <input
+                class="field__input"
+                id="newsletter-zip"
+                type="text"
+                name="zip"
+                placeholder="Zip code*"
+                autocomplete="postal-code"
+                inputmode="text"
+                required
+                aria-describedby="newsletter-zip-msg"
+              />
+              <p class="field__msg" id="newsletter-zip-msg"></p>
+            </div>
+          </div>
+
+          <p class="newsletter__consent">
+            By submitting this form, I agree to receive communications from{' '}
+            <strong>{site.name}</strong> and acknowledge the{' '}
+            <a href={privacyHref}>Terms and privacy notice.</a>
+          </p>
+        </div>
+
+        <Button label="Subscribe" type="submit" variant="cream" size="sm" />
+
+        <p class="newsletter__status" data-newsletter-status role="status"></p>
+      </form>
+    </div>
+  </div>
+
+  <div class="newsletter__stage">
+    <Image
+      class="newsletter__car"
+      src={carImage}
+      alt=""
+      widths={[300, 600, 866, 1300]}
+      sizes="(max-width: 555px) 300px, (max-width: 1600px) 54vw, 866px"
+      loading="lazy"
+      decoding="async"
+      data-newsletter-car
+    />
+  </div>
+</section>
+
+<style>
+  /* 80 top padding + 178 row + 60 gap + 462 of car = the frame's 780. */
+  .newsletter {
+    position: relative;
+    padding-top: var(--section-gap-sm); /* 80 at 1600 */
+    background-color: var(--c-ink);
+    color: var(--c-cream);
+    overflow: hidden;
+  }
+
+  /* Percentages of the 1400 container: 565 / 271 / 564. */
+  .newsletter__row {
+    display: flex;
+    align-items: center;
+    gap: 19.357%;
+  }
+
+  .newsletter__intro {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-16);
+    flex: 0 0 40.357%;
+  }
+
+  /* An <h2> for the outline, at the frame's 36px. */
+  .newsletter__title {
+    font-size: var(--fs-h4);
+  }
+
+  .newsletter__body {
+    max-width: 27.8125rem; /* 445 */
+  }
+
+  .newsletter__form {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--sp-24);
+    flex: 0 0 40.286%;
+  }
+
+  .newsletter__fields {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-16);
+    width: 100%;
+  }
+
+  .newsletter__inputs {
+    display: flex;
+    gap: var(--sp-24);
+  }
+
+  .field {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .field__input {
+    width: 100%;
+    height: 3rem; /* 48 */
+    padding: 0 var(--sp-24);
+    border: 1px solid var(--c-muted);
+    border-radius: var(--r-pill);
+    background-color: var(--c-ink);
+    color: var(--c-cream);
+    font-size: var(--fs-body);
+    line-height: var(--lh-body);
+    transition: border-color var(--dur-fast) var(--ease-out);
+  }
+
+  /* The Figma placeholder is full-strength cream, not a dimmed hint — the
+     visually-hidden <label> is what carries the accessible name. */
+  .field__input::placeholder {
+    color: var(--c-cream);
+    opacity: 1;
+  }
+
+  .field__input:hover {
+    border-color: var(--c-cream);
+  }
+
+  .field__input[aria-invalid='true'] {
+    border-color: var(--c-error);
+  }
+
+  /* Autofill would otherwise repaint the pill in the browser's own pale
+     yellow, which is unreadable against cream text. */
+  .field__input:-webkit-autofill,
+  .field__input:-webkit-autofill:hover,
+  .field__input:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--c-cream);
+    box-shadow: 0 0 0 100px var(--c-ink) inset;
+  }
+
+  .field__msg {
+    margin-top: var(--sp-8);
+    padding-inline: var(--sp-24);
+    font-size: var(--fs-small);
+    color: var(--c-error);
+  }
+
+  .field__msg:empty,
+  .newsletter__status:empty {
+    display: none;
+  }
+
+  .newsletter__consent {
+    font-size: var(--fs-small);
+    color: var(--c-muted);
+  }
+
+  .newsletter__consent strong {
+    font-weight: var(--fw-bold);
+  }
+
+  .newsletter__consent a {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    transition: color var(--dur-fast) var(--ease-out);
+  }
+
+  .newsletter__consent a:hover {
+    color: var(--c-cream);
+  }
+
+  .newsletter__status {
+    font-size: var(--fs-small);
+    color: var(--c-primary);
+  }
+
+  .newsletter__status[data-state='error'] {
+    color: var(--c-error);
+  }
+
+  /* 866 of the 1600 frame, centred, with the band clipping the render at the
+     462 rows the design shows. The asset is already cropped to that window;
+     the box keeps the ratio while the car scales. */
+  .newsletter__stage {
+    width: clamp(18.75rem, 54.125%, 54.125rem);
+    margin: 3.75rem auto 0; /* 318 - 258 */
+    aspect-ratio: 866 / 462;
+    overflow: hidden;
+  }
+
+  .newsletter__car {
+    width: 100%;
+    height: auto;
+  }
+
+  /* Below the header's own breakpoint the two columns no longer both hold a
+     comfortable measure, so they stack. */
+  @media (max-width: 1100px) {
+    .newsletter__row {
+      flex-direction: column;
+      align-items: stretch;
+      gap: var(--sp-48);
+    }
+
+    .newsletter__intro,
+    .newsletter__form {
+      flex: none;
+      width: 100%;
+    }
+
+    .newsletter__body {
+      max-width: 34rem;
+    }
+  }
+
+  @media (max-width: 520px) {
+    .newsletter__inputs {
+      flex-direction: column;
+      gap: var(--sp-16);
+    }
+  }
+</style>
+
+<script>
+  import { revealOnScroll, gsap, prefersReducedMotion } from '../../scripts/motion';
+
+  const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  /** Deliberately loose — postal codes are alphanumeric in much of the world. */
+  const ZIP = /^[A-Za-z0-9][A-Za-z0-9 -]{2,11}$/;
+
+  interface Rule {
+    test: (value: string) => boolean;
+    empty: string;
+    invalid: string;
+  }
+
+  const rules: Record<string, Rule> = {
+    email: {
+      test: (v) => EMAIL.test(v),
+      empty: 'Enter your email address.',
+      invalid: 'Enter a valid email address.',
+    },
+    zip: {
+      test: (v) => ZIP.test(v),
+      empty: 'Enter your zip code.',
+      invalid: 'Enter a valid zip code.',
+    },
+  };
+
+  function messageFor(input: HTMLInputElement): string {
+    const rule = rules[input.name];
+    if (!rule) return '';
+    const value = input.value.trim();
+    if (value === '') return rule.empty;
+    return rule.test(value) ? '' : rule.invalid;
+  }
+
+  function setFieldMessage(input: HTMLInputElement, message: string): void {
+    const id = input.getAttribute('aria-describedby');
+    const target = id ? document.getElementById(id) : null;
+    if (target) target.textContent = message;
+    if (message) input.setAttribute('aria-invalid', 'true');
+    else input.removeAttribute('aria-invalid');
+  }
+
+  document.querySelectorAll<HTMLElement>('[data-newsletter]').forEach((section) => {
+    revealOnScroll(section);
+
+    /* The band is ink and so is the artwork's own fade, so easing the car's
+       opacity up as it rises reads as the car emerging from the dark rather
+       than as a crossfade. */
+    const car = section.querySelector<HTMLElement>('[data-newsletter-car]');
+    if (car && !prefersReducedMotion()) {
+      gsap.fromTo(
+        car,
+        { yPercent: 7, opacity: 0.25 },
+        {
+          yPercent: 0,
+          opacity: 1,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: section,
+            start: 'top bottom',
+            end: 'bottom bottom',
+            scrub: 0.6,
+          },
+        },
+      );
+    }
+
+    const form = section.querySelector<HTMLFormElement>('[data-newsletter-form]');
+    if (!form) return;
+
+    const inputs = Array.from(form.querySelectorAll<HTMLInputElement>('.field__input'));
+    const status = form.querySelector<HTMLElement>('[data-newsletter-status]');
+    const submit = form.querySelector<HTMLButtonElement>('button[type="submit"]');
+
+    /* Only now that the script is running do we take validation off the
+       browser — without JS the native messages are the better fallback. */
+    form.noValidate = true;
+
+    const setStatus = (message: string, state?: 'error'): void => {
+      if (!status) return;
+      status.textContent = message;
+      if (state) status.dataset.state = state;
+      else delete status.dataset.state;
+    };
+
+    /**
+     * Errors are raised on submit and cleared on input — deliberately never on
+     * blur. Raising one on blur inserts a message between mousedown and
+     * mouseup, which moves the submit button out from under the pointer and
+     * swallows the very click that triggered the blur.
+     */
+    inputs.forEach((input) => {
+      input.addEventListener('input', () => {
+        if (input.hasAttribute('aria-invalid') && messageFor(input) === '') {
+          setFieldMessage(input, '');
+        }
+      });
+    });
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      setStatus('');
+
+      let firstInvalid: HTMLInputElement | null = null;
+      inputs.forEach((input) => {
+        const message = messageFor(input);
+        setFieldMessage(input, message);
+        if (message && !firstInvalid) firstInvalid = input;
+      });
+
+      if (firstInvalid) {
+        (firstInvalid as HTMLInputElement).focus();
+        return;
+      }
+
+      const succeed = (): void => {
+        form.reset();
+        inputs.forEach((input) => setFieldMessage(input, ''));
+        setStatus('Thanks for subscribing — check your inbox to confirm.');
+      };
+
+      // No endpoint configured: validate, confirm, send nothing.
+      if (form.dataset.hasEndpoint !== 'true') {
+        succeed();
+        return;
+      }
+
+      if (submit) submit.disabled = true;
+      try {
+        const response = await fetch(form.action, {
+          method: 'POST',
+          headers: { Accept: 'application/json' },
+          body: new FormData(form),
+        });
+        if (!response.ok) throw new Error(String(response.status));
+        succeed();
+      } catch {
+        setStatus('Something went wrong. Please try again.', 'error');
+      } finally {
+        if (submit) submit.disabled = false;
+      }
+    });
+  });
+</script>

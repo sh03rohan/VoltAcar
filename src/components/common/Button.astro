@@ -19,6 +19,12 @@ interface Props {
   /** Renders a <button> instead of an <a> when set. */
   type?: 'button' | 'submit';
   variant?: 'light' | 'dark' | 'cream';
+  /**
+   * `md` is the component's own 56px height. `sm` is the 48px instance the
+   * newsletter form uses (#91:593), which tightens the vertical and trailing
+   * padding to 4 so the same 40px circle fits a shorter pill.
+   */
+  size?: 'md' | 'sm';
   class?: string;
 }
 
@@ -27,6 +33,7 @@ const {
   href,
   type,
   variant = 'dark',
+  size = 'md',
   class: className,
 } = Astro.props;
 
@@ -34,7 +41,7 @@ const Tag = href ? 'a' : 'button';
 ---
 
 <Tag
-  class:list={['btn', `btn--${variant}`, className]}
+  class:list={['btn', `btn--${variant}`, `btn--${size}`, className]}
   href={href}
   type={href ? undefined : (type ?? 'button')}
 >
@@ -47,12 +54,16 @@ const Tag = href ? 'a' : 'button';
 
 <style>
   .btn {
+    /* Figma: 8px 8px 8px 16px. The trailing and vertical padding always match
+       each other, which is what lets the hover fill inset evenly. */
+    --btn-pad: var(--sp-8);
+    --btn-pad-l: var(--sp-16);
+
     position: relative;
     display: inline-flex;
     align-items: center;
     gap: var(--sp-12);
-    /* Figma: 8px 8px 8px 16px */
-    padding: var(--sp-8) var(--sp-8) var(--sp-8) var(--sp-16);
+    padding: var(--btn-pad) var(--btn-pad) var(--btn-pad) var(--btn-pad-l);
     border-radius: 50px;
     font-size: var(--fs-body);
     font-weight: var(--fw-semibold);
@@ -67,9 +78,9 @@ const Tag = href ? 'a' : 'button';
      round), which is the Figma hover variant. */
   .btn__fill {
     position: absolute;
-    top: var(--sp-8);
-    right: var(--sp-8);
-    bottom: var(--sp-8);
+    top: var(--btn-pad);
+    right: var(--btn-pad);
+    bottom: var(--btn-pad);
     width: 40px;
     border-radius: var(--r-pill);
     background-color: var(--c-primary);
@@ -92,6 +103,13 @@ const Tag = href ? 'a' : 'button';
     transition: transform var(--dur) var(--ease-out);
   }
 
+  /* ---------- Sizes ---------- */
+
+  /* Figma #91:593: padding 4/4/4/16 around the same 40px circle → 48px tall. */
+  .btn--sm {
+    --btn-pad: 4px;
+  }
+
   /* ---------- Variants ---------- */
 
   .btn--light {
@@ -109,11 +127,17 @@ const Tag = href ? 'a' : 'button';
     color: var(--c-primary);
   }
 
+  /* Set while a form submission is in flight. */
+  .btn:disabled {
+    opacity: 0.55;
+    cursor: progress;
+  }
+
   /* ---------- Hover / focus ---------- */
 
   @media (hover: hover) {
     .btn:hover .btn__fill {
-      width: calc(100% - var(--sp-16));
+      width: calc(100% - var(--btn-pad) * 2);
     }
 
     .btn:hover .btn__icon {
@@ -129,7 +153,7 @@ const Tag = href ? 'a' : 'button';
 
   /* Keyboard users get the same treatment as hover. */
   .btn:focus-visible .btn__fill {
-    width: calc(100% - var(--sp-16));
+    width: calc(100% - var(--btn-pad) * 2);
   }
 
   .btn--dark:focus-visible .btn__label {

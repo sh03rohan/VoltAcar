@@ -79,6 +79,12 @@ export const footerColumns: NavLink[][] = [
  * validate and show its success state without sending anything, which is
  * useful while you are still styling.
  *
+ * Submission goes through `fetch` so the page never navigates away, which
+ * means a cross-origin endpoint has to allow your domain via CORS. The hosted
+ * services above all do by default; a serverless function of your own needs an
+ * `Access-Control-Allow-Origin` header. Same-origin endpoints (Netlify Forms,
+ * an /api route) need nothing.
+ *
  * Example: 'https://formspree.io/f/xxxxxxxx'
  */
 export const forms = {
