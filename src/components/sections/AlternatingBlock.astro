@@ -1,0 +1,272 @@
+---
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+import Button from '../common/Button.astro';
+
+/**
+ * Image-and-copy band — Figma #25:254, #25:213, #22:166 on Home, and reused
+ * on Features and About.
+ *
+ * Each band is a full-bleed 1600x780 white frame. The media runs to the
+ * outer viewport edge while the copy column (565px) stops at the 100px
+ * gutter, so the two sides are laid out as percentages of the 1600 frame:
+ *
+ *   image left:  [media --media-width][gap --column-gap][565 copy][100 gutter]
+ *   image right: [100 gutter][565 copy][gap --column-gap][media --media-width]
+ *
+ * The heading and body carry their own max-widths because Figma sets a
+ * different measure per band, and those measures are what produce the
+ * designed line breaks.
+ */
+interface Props {
+  title: string;
+  /** Rendered in the steel-blue accent immediately after `title`. */
+  titleAccent?: string;
+  body: string;
+  image: ImageMetadata;
+  imageAlt: string;
+  mediaSide?: 'left' | 'right';
+  /**
+   * Media width and column gap as percentages of the 1500px row *inside* the
+   * gutter — not of the 1600px frame. Percentages on flex children resolve
+   * against the padded content box, so media + gap + 37.667% copy = 100%.
+   */
+  mediaWidth: string;
+  columnGap: string;
+  /** Optional measures in px, matching the Figma text boxes. */
+  titleWidth?: number;
+  bodyWidth?: number;
+  ctaLabel?: string;
+  ctaHref?: string;
+  /** Set for the first band on a page so its image is not lazy-loaded. */
+  eager?: boolean;
+}
+
+const {
+  title,
+  titleAccent,
+  body,
+  image,
+  imageAlt,
+  mediaSide = 'left',
+  mediaWidth,
+  columnGap,
+  titleWidth,
+  bodyWidth,
+  ctaLabel = 'Take a Test Drive',
+  ctaHref = '/test-drive',
+  eager = false,
+} = Astro.props;
+
+const styleVars = [
+  `--media-width:${mediaWidth}`,
+  `--column-gap:${columnGap}`,
+  titleWidth ? `--title-width:${titleWidth / 16}rem` : '',
+  bodyWidth ? `--body-width:${bodyWidth / 16}rem` : '',
+]
+  .filter(Boolean)
+  .join(';');
+---
+
+<section
+  class:list={['alt', `alt--media-${mediaSide}`]}
+  style={styleVars}
+  data-alt
+>
+  <div class="alt__inner">
+    <div class="alt__media" data-alt-media>
+      <Image
+        src={image}
+        alt={imageAlt}
+        widths={[480, 768, 1100, 1700]}
+        sizes="(max-width: 992px) 92vw, 50vw"
+        loading={eager ? 'eager' : 'lazy'}
+        decoding="async"
+        class="alt__image"
+      />
+    </div>
+
+    <div class="alt__body">
+      <div class="alt__text">
+        <h2 class="alt__title" data-alt-item>
+          {title}{titleAccent && <span class="alt__accent">{titleAccent}</span>}
+        </h2>
+        <p class="alt__copy" data-alt-item>{body}</p>
+      </div>
+      <div class="alt__cta" data-alt-item>
+        <Button label={ctaLabel} href={ctaHref} variant="dark" />
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .alt {
+    background-color: var(--c-white);
+  }
+
+  .alt__inner {
+    display: flex;
+    align-items: center;
+    gap: var(--column-gap);
+    width: 100%;
+    max-width: var(--frame); /* 1600 */
+    min-height: 48.75rem; /* 780 */
+    margin-inline: auto;
+  }
+
+  /* The media bleeds to the outer edge; the gutter sits on the copy side. */
+  .alt--media-left .alt__inner {
+    padding-right: var(--gutter);
+  }
+
+  .alt--media-right .alt__inner {
+    padding-left: var(--gutter);
+    flex-direction: row-reverse;
+  }
+
+  .alt__media {
+    flex: 0 0 var(--media-width);
+    /* Clipped so the reveal wipes rather than the image sliding out. */
+    overflow: hidden;
+  }
+
+  .alt__image {
+    width: 100%;
+    height: auto;
+  }
+
+  .alt__body {
+    flex: 0 0 37.6667%; /* 565 / 1500 */
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--sp-80);
+  }
+
+  .alt__text {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-32);
+  }
+
+  .alt__title {
+    max-width: var(--title-width, none);
+    font-size: var(--fs-h3); /* 52 */
+    font-weight: var(--fw-bold);
+    line-height: var(--lh-tight);
+    color: var(--c-ink);
+  }
+
+  .alt__accent {
+    color: var(--c-steel);
+  }
+
+  .alt__copy {
+    max-width: var(--body-width, none);
+    font-size: var(--fs-lead); /* 20 */
+    line-height: var(--lh-body);
+    color: #000;
+  }
+
+  /* ---------- Responsive ---------- */
+
+  @media (max-width: 1200px) {
+    .alt__inner {
+      gap: var(--sp-48);
+      min-height: 0;
+      padding-block: var(--section-gap-sm);
+    }
+
+    .alt__body {
+      flex: 1 1 auto;
+      gap: var(--sp-48);
+    }
+
+    .alt__media {
+      flex: 0 0 48%;
+    }
+
+    /* The designed measures are tuned to the 565px desktop column; below it
+       the copy should use the width it actually has. */
+    .alt__title,
+    .alt__copy {
+      max-width: none;
+    }
+  }
+
+  @media (max-width: 992px) {
+    .alt__inner,
+    .alt--media-right .alt__inner {
+      flex-direction: column;
+      align-items: stretch;
+      gap: var(--sp-48);
+      padding-inline: var(--gutter);
+    }
+
+    .alt__media {
+      flex: none;
+      order: -1;
+      border-radius: var(--r-sm);
+    }
+
+    .alt__body {
+      gap: var(--sp-32);
+    }
+  }
+</style>
+
+<script>
+  import { gsap, prefersReducedMotion } from '../../scripts/motion';
+
+  if (!prefersReducedMotion()) {
+    document.querySelectorAll<HTMLElement>('[data-alt]').forEach((section) => {
+      const media = section.querySelector<HTMLElement>('[data-alt-media]');
+      const items = section.querySelectorAll('[data-alt-item]');
+      const fromLeft = section.classList.contains('alt--media-left');
+
+      const tl = gsap.timeline({
+        defaults: { ease: 'power3.out' },
+        scrollTrigger: { trigger: section, start: 'top 70%', once: true },
+      });
+
+      // The image is uncovered from its outer edge inwards.
+      if (media) {
+        tl.fromTo(
+          media,
+          { clipPath: fromLeft ? 'inset(0 100% 0 0)' : 'inset(0 0 0 100%)' },
+          { clipPath: 'inset(0 0% 0 0%)', duration: 1.1 },
+          0,
+        );
+      }
+
+      if (items.length) {
+        tl.fromTo(
+          items,
+          { opacity: 0, y: 28 },
+          { opacity: 1, y: 0, duration: 0.7, stagger: 0.12 },
+          0.25,
+        );
+      }
+
+      // Slow counter-drift on the render for depth.
+      const img = section.querySelector<HTMLElement>('.alt__image');
+      if (img) {
+        gsap.fromTo(
+          img,
+          { yPercent: -3 },
+          {
+            yPercent: 3,
+            ease: 'none',
+            scrollTrigger: {
+              trigger: section,
+              start: 'top bottom',
+              end: 'bottom top',
+              scrub: true,
+            },
+          },
+        );
+      }
+    });
+  }
+</script>

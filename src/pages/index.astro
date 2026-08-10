@@ -3,7 +3,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import Header from '../components/layout/Header.astro';
 import Hero from '../components/sections/Hero.astro';
 import MissionBand from '../components/sections/MissionBand.astro';
+import AlternatingBlock from '../components/sections/AlternatingBlock.astro';
 import { site } from '../config/site';
+
+import featureAutonomous from '../assets/images/feature-autonomous.webp';
+import featureCharging from '../assets/images/feature-charging.webp';
+import featureRange from '../assets/images/feature-range.webp';
 ---
 
 <BaseLayout title={site.name} description={site.description}>
@@ -12,10 +17,50 @@ import { site } from '../config/site';
   <Hero />
   <MissionBand />
 
-  {/* Remaining Home sections follow in Sub-phase 4 onward. */}
+  {/* Figma #25:254 — media 758, gap 177 of the 1500 row */}
+  <AlternatingBlock
+    title="Engineered for Modern Life, "
+    titleAccent="Fueled by Innovation"
+    body="Experience a safer, smarter ride with advanced autonomous driving technology that adapts seamlessly to traffic and road conditions."
+    image={featureAutonomous}
+    imageAlt="Overhead view of the VoltACar cabin and panoramic roof"
+    mediaSide="left"
+    mediaWidth="50.5333%"
+    columnGap="11.8%"
+  />
+
+  {/* Figma #25:213 — media 821, gap 114 of the 1500 row */}
+  <AlternatingBlock
+    title="Ready in Minutes, "
+    titleAccent="Driven by Technology"
+    body="Get back on the road quickly with advanced fast-charging technology that reaches 80% in just 30 minutes."
+    image={featureCharging}
+    imageAlt="Front view of the VoltACar showing its lighting signature"
+    mediaSide="right"
+    mediaWidth="54.7333%"
+    columnGap="7.6%"
+    titleWidth={503}
+    bodyWidth={451}
+  />
+
+  {/* Figma #22:166 — media 794, gap 141 of the 1500 row */}
+  <AlternatingBlock
+    title="Built for Every Journey, "
+    titleAccent="Energized by Technology"
+    body="Travel farther with confidence. Thanks to a high-capacity electric battery that delivers up to 500 km per charge."
+    image={featureRange}
+    imageAlt="Top-down view of the VoltACar interior and seating"
+    mediaSide="left"
+    mediaWidth="52.9333%"
+    columnGap="9.4%"
+    titleWidth={525}
+    bodyWidth={444}
+  />
+
+  {/* Remaining Home sections follow in Sub-phase 5 onward. */}
   <section class="filler">
     <div class="container">
-      <p>Next: the alternating feature blocks.</p>
+      <p>Next: the interactive car hotspot diagram.</p>
     </div>
   </section>
 </BaseLayout>
