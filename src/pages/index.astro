@@ -2,6 +2,7 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Header from '../components/layout/Header.astro';
 import Hero from '../components/sections/Hero.astro';
+import MissionBand from '../components/sections/MissionBand.astro';
 import { site } from '../config/site';
 ---
 
@@ -9,11 +10,12 @@ import { site } from '../config/site';
   <Header slot="header" />
 
   <Hero />
+  <MissionBand />
 
-  {/* Remaining Home sections follow in Sub-phase 3 onward. */}
+  {/* Remaining Home sections follow in Sub-phase 4 onward. */}
   <section class="filler">
     <div class="container">
-      <p>Next: the mission statement band.</p>
+      <p>Next: the alternating feature blocks.</p>
     </div>
   </section>
 </BaseLayout>
