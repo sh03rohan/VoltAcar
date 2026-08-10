@@ -1,0 +1,146 @@
+---
+import Icon from './Icon.astro';
+
+/**
+ * The pill button from the Figma component set `263:1383`.
+ *
+ * Rest state  (#15:114):   padding 8/8/8/16, gap 12, radius 50, a 40x40 lime
+ *                          circle holding the arrow.
+ * Hover state (#263:1390): padding collapses to a uniform 8 and the lime
+ *                          circle expands to fill the pill. That expansion is
+ *                          what `.btn__fill` animates.
+ *
+ * Variants are named for their resting background, which is the only thing
+ * that changes between the three placements in the design.
+ */
+interface Props {
+  label: string;
+  href?: string;
+  /** Renders a <button> instead of an <a> when set. */
+  type?: 'button' | 'submit';
+  variant?: 'light' | 'dark' | 'cream';
+  class?: string;
+}
+
+const {
+  label,
+  href,
+  type,
+  variant = 'dark',
+  class: className,
+} = Astro.props;
+
+const Tag = href ? 'a' : 'button';
+---
+
+<Tag
+  class:list={['btn', `btn--${variant}`, className]}
+  href={href}
+  type={href ? undefined : (type ?? 'button')}
+>
+  <span class="btn__fill" aria-hidden="true"></span>
+  <span class="btn__label">{label}</span>
+  <span class="btn__icon">
+    <Icon name="arrow" size={20} />
+  </span>
+</Tag>
+
+<style>
+  .btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-12);
+    /* Figma: 8px 8px 8px 16px */
+    padding: var(--sp-8) var(--sp-8) var(--sp-8) var(--sp-16);
+    border-radius: 50px;
+    font-size: var(--fs-body);
+    font-weight: var(--fw-semibold);
+    line-height: var(--lh-body);
+    text-align: left;
+    isolation: isolate;
+    transition: background-color var(--dur) var(--ease-out);
+  }
+
+  /* The lime layer. At rest it sits exactly where the 40x40 circle is; on
+     hover it grows leftward to fill the pill's inner box (inset 8px all
+     round), which is the Figma hover variant. */
+  .btn__fill {
+    position: absolute;
+    top: var(--sp-8);
+    right: var(--sp-8);
+    bottom: var(--sp-8);
+    width: 40px;
+    border-radius: var(--r-pill);
+    background-color: var(--c-primary);
+    z-index: -1;
+    transition: width var(--dur) var(--ease-out);
+  }
+
+  .btn__label {
+    position: relative;
+    transition: color var(--dur) var(--ease-out);
+  }
+
+  .btn__icon {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 40px;
+    height: 40px;
+    color: var(--c-ink);
+    transition: transform var(--dur) var(--ease-out);
+  }
+
+  /* ---------- Variants ---------- */
+
+  .btn--light {
+    background-color: var(--c-white);
+    color: var(--c-ink);
+  }
+
+  .btn--cream {
+    background-color: var(--c-cream);
+    color: var(--c-ink);
+  }
+
+  .btn--dark {
+    background-color: var(--c-ink);
+    color: var(--c-primary);
+  }
+
+  /* ---------- Hover / focus ---------- */
+
+  @media (hover: hover) {
+    .btn:hover .btn__fill {
+      width: calc(100% - var(--sp-16));
+    }
+
+    .btn:hover .btn__icon {
+      transform: translateX(2px);
+    }
+
+    /* On the dark variant the label is lime, which would vanish against the
+       expanding lime fill — flip it to ink. */
+    .btn--dark:hover .btn__label {
+      color: var(--c-ink);
+    }
+  }
+
+  /* Keyboard users get the same treatment as hover. */
+  .btn:focus-visible .btn__fill {
+    width: calc(100% - var(--sp-16));
+  }
+
+  .btn--dark:focus-visible .btn__label {
+    color: var(--c-ink);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .btn__fill,
+    .btn__icon,
+    .btn__label {
+      transition: none;
+    }
+  }
+</style>

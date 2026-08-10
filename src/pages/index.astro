@@ -1,29 +1,46 @@
 ---
-// Placeholder — replaced section by section in Phase 1 (Home).
 import BaseLayout from '../layouts/BaseLayout.astro';
+import Header from '../components/layout/Header.astro';
 import { site } from '../config/site';
 ---
 
 <BaseLayout title={site.name} description={site.description}>
-  <section class="scaffold container">
-    <p class="eyebrow">Phase 0 complete</p>
-    <h1>{site.name}</h1>
-    <p class="lead">{site.description}</p>
-    <p class="note">
-      Design tokens, base layout, SEO, and project structure are in place. The
-      Home page is built section by section from here.
-    </p>
+  <Header slot="header" />
+
+  {/* Placeholder standing in for the hero — replaced in Sub-phase 2. */}
+  <section class="hero-placeholder on-dark">
+    <div class="container">
+      <p class="eyebrow">Sub-phase 1</p>
+      <h1>Header &amp; navigation</h1>
+      <p class="lead">
+        The header overlays the dark hero exactly as it does in Figma. Scroll
+        down to see it pin, and narrow the window past 1100px for the drawer.
+      </p>
+    </div>
+  </section>
+
+  <section class="filler">
+    <div class="container">
+      <p>Scroll region — the hero and the rest of the page follow.</p>
+    </div>
   </section>
 </BaseLayout>
 
 <style>
-  .scaffold {
+  .hero-placeholder {
+    display: flex;
+    align-items: center;
+    min-height: var(--banner-h);
+    padding-block: var(--sp-180) var(--sp-80);
+    background-color: var(--c-ink);
+    color: var(--c-cream);
+  }
+
+  .hero-placeholder .container {
     display: flex;
     flex-direction: column;
     gap: var(--sp-24);
     align-items: flex-start;
-    padding-block: var(--section-gap);
-    max-width: 46rem;
   }
 
   .eyebrow {
@@ -31,16 +48,18 @@ import { site } from '../config/site';
     font-weight: var(--fw-semibold);
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--c-text-soft);
+    color: var(--c-primary);
   }
 
   .lead {
+    max-width: 42rem;
     font-size: var(--fs-lead);
   }
 
-  .note {
+  .filler {
+    display: grid;
+    place-items: center;
+    min-height: 150vh;
     color: var(--c-text-soft);
-    border-left: 3px solid var(--c-primary);
-    padding-left: var(--sp-16);
   }
 </style>
