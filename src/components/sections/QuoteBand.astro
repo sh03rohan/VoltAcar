@@ -1,0 +1,186 @@
+---
+/**
+ * Founder quote band — Figma #167:176 on Home, reused as #263:1010 on About
+ * and #128:369 on Features, all sharing the same background and treatment.
+ *
+ * A full-bleed 1600x780 frame: aerial coastline footage under a 70% black
+ * wash, with a 1162px centred column holding a 36px lime quote (measured at
+ * 922px) and a 24px cream attribution, 48px apart.
+ *
+ * The Figma frame shows a still, but the background is a video. It is muted,
+ * looping and decorative, so it carries no controls and is hidden from
+ * assistive tech. It only downloads and plays once the band is on screen, and
+ * never autoplays when the visitor prefers reduced motion — the poster frame
+ * stands in.
+ */
+interface Props {
+  quote: string;
+  attribution: string;
+  /** Paths under /public. Defaults to the shared coastline footage. */
+  videoWebm?: string;
+  videoMp4?: string;
+  poster?: string;
+}
+
+const {
+  quote,
+  attribution,
+  videoWebm = '/video/quote-bg.webm',
+  videoMp4 = '/video/quote-bg.mp4',
+  poster = '/video/quote-poster.webp',
+} = Astro.props;
+---
+
+<section class="quote on-dark" data-quote>
+  <video
+    class="quote__bg"
+    data-quote-video
+    poster={poster}
+    preload="none"
+    muted
+    loop
+    playsinline
+    disablepictureinpicture
+    aria-hidden="true"
+    tabindex="-1"
+  >
+    <source src={videoWebm} type="video/webm" />
+    <source src={videoMp4} type="video/mp4" />
+  </video>
+  <div class="quote__scrim"></div>
+
+  <figure class="quote__inner">
+    <blockquote class="quote__text" data-quote-text>{quote}</blockquote>
+    <figcaption class="quote__by" data-quote-by>{attribution}</figcaption>
+  </figure>
+</section>
+
+<style>
+  .quote {
+    position: relative;
+    display: grid;
+    place-items: center;
+    min-height: 48.75rem; /* 780 */
+    padding: var(--section-gap-sm) var(--gutter);
+    overflow: hidden;
+    isolation: isolate;
+    /* Shows through until the poster paints, so the band is never a white
+       flash on a dark page. */
+    background-color: var(--c-ink);
+  }
+
+  .quote__bg {
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+  }
+
+  /* rgba(0, 0, 0, 0.7) — Figma fill_6981fc0a */
+  .quote__scrim {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background-color: rgba(0, 0, 0, 0.7);
+  }
+
+  .quote__inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--sp-48);
+    width: 100%;
+    max-width: 72.625rem; /* 1162 */
+    margin: 0;
+    text-align: center;
+  }
+
+  .quote__text {
+    max-width: 57.625rem; /* 922 */
+    margin: 0;
+    font-size: var(--fs-h4); /* 36 */
+    font-weight: var(--fw-medium);
+    line-height: var(--lh-heading);
+    color: var(--c-primary);
+    text-wrap: pretty;
+  }
+
+  .quote__by {
+    font-size: var(--fs-h6); /* 24 */
+    font-weight: var(--fw-regular);
+    line-height: var(--lh-heading);
+    color: var(--c-cream);
+  }
+
+  @media (max-width: 992px) {
+    .quote {
+      min-height: 0;
+      padding-block: var(--section-gap);
+    }
+
+    .quote__inner {
+      gap: var(--sp-32);
+    }
+  }
+</style>
+
+<script>
+  import { gsap, prefersReducedMotion } from '../../scripts/motion';
+
+  document.querySelectorAll<HTMLElement>('[data-quote]').forEach((section) => {
+    const video = section.querySelector<HTMLVideoElement>('[data-quote-video]');
+
+    /* ---------- Background video ----------
+       Held at preload="none" so a 1.2MB file is never fetched for a band the
+       visitor may not reach. Playback is tied to visibility, and paused off
+       screen so it costs nothing to decode while scrolling elsewhere. */
+    if (video) {
+      const allowMotion = !prefersReducedMotion();
+
+      if (allowMotion) {
+        const io = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((entry) => {
+              if (entry.isIntersecting) {
+                if (video.preload !== 'auto') video.preload = 'auto';
+                // play() rejects when a browser blocks autoplay; the poster
+                // simply remains, which is a fine resting state.
+                void video.play().catch(() => {});
+              } else {
+                video.pause();
+              }
+            });
+          },
+          { rootMargin: '200px 0px' },
+        );
+        io.observe(section);
+      }
+    }
+
+    /* ---------- Copy ---------- */
+    if (prefersReducedMotion()) return;
+
+    const text = section.querySelector('[data-quote-text]');
+    const by = section.querySelector('[data-quote-by]');
+
+    const tl = gsap.timeline({
+      defaults: { ease: 'power3.out' },
+      scrollTrigger: { trigger: section, start: 'top 75%', once: true },
+    });
+
+    // Settles out of a soft blur rather than a plain fade.
+    if (text) {
+      tl.fromTo(
+        text,
+        { opacity: 0, y: 26, filter: 'blur(8px)' },
+        { opacity: 1, y: 0, filter: 'blur(0px)', duration: 1 },
+        0,
+      );
+    }
+
+    if (by) tl.fromTo(by, { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.7 }, 0.35);
+  });
+</script>

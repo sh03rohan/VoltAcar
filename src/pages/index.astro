@@ -5,6 +5,7 @@ import Hero from '../components/sections/Hero.astro';
 import MissionBand from '../components/sections/MissionBand.astro';
 import AlternatingBlock from '../components/sections/AlternatingBlock.astro';
 import CarHotspots from '../components/sections/CarHotspots.astro';
+import QuoteBand from '../components/sections/QuoteBand.astro';
 import { site } from '../config/site';
 
 import featureAutonomous from '../assets/images/feature-autonomous.webp';
@@ -60,10 +61,16 @@ import featureRange from '../assets/images/feature-range.webp';
 
   <CarHotspots />
 
-  {/* Remaining Home sections follow in Sub-phase 6 onward. */}
+  {/* Figma #167:176 */}
+  <QuoteBand
+    quote="“At VoltACar, we’re rethinking transportation by blending smart technology, sustainability, and human-centered design to make electric driving intuitive and accessible.”"
+    attribution="John Sans, Founder & CEO"
+  />
+
+  {/* Remaining Home sections follow in Sub-phase 7 onward. */}
   <section class="filler">
     <div class="container">
-      <p>Next: the founder quote band.</p>
+      <p>Next: the interior features band.</p>
     </div>
   </section>
 </BaseLayout>
