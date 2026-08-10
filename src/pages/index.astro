@@ -6,6 +6,7 @@ import MissionBand from '../components/sections/MissionBand.astro';
 import AlternatingBlock from '../components/sections/AlternatingBlock.astro';
 import CarHotspots from '../components/sections/CarHotspots.astro';
 import QuoteBand from '../components/sections/QuoteBand.astro';
+import InteriorFeatures from '../components/sections/InteriorFeatures.astro';
 import { site } from '../config/site';
 
 import featureAutonomous from '../assets/images/feature-autonomous.webp';
@@ -67,10 +68,13 @@ import featureRange from '../assets/images/feature-range.webp';
     attribution="John Sans, Founder & CEO"
   />
 
-  {/* Remaining Home sections follow in Sub-phase 7 onward. */}
+  {/* Figma #59:207 */}
+  <InteriorFeatures />
+
+  {/* Remaining Home sections follow in Sub-phase 8 onward. */}
   <section class="filler">
     <div class="container">
-      <p>Next: the interior features band.</p>
+      <p>Next: the CTA banner.</p>
     </div>
   </section>
 </BaseLayout>

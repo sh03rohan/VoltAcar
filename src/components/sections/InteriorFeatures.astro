@@ -1,0 +1,255 @@
+---
+import { Image } from 'astro:assets';
+import interiorCars from '../../assets/images/interior-cars.webp';
+
+/**
+ * Interior features band — Figma #59:207.
+ *
+ * A 964px white area holding the 64px heading at (111, 100) and a full-bleed
+ * render sitting flush to its bottom edge, followed by a 1400px row of four
+ * 350px columns separated by 0.5px steel rules.
+ *
+ * All four titles set on two lines in the design. Two carry an explicit line
+ * break in Figma and the other two are broken by their text-box measure; the
+ * break is made explicit for all four here so it holds at every width rather
+ * than depending on where the fluid type happens to wrap.
+ */
+interface Feature {
+  /** Contains the newline that sets the title on two lines. */
+  title: string;
+  body: string;
+}
+
+const features: Feature[] = [
+  {
+    title: 'Ergonomic\nSeating',
+    body: 'Plush, adjustable seats crafted for maximum comfort on every ride.',
+  },
+  {
+    title: 'Climate\nControl',
+    body: 'Intelligent cooling and heating systems to maintain a perfect cabin temperature.',
+  },
+  {
+    title: 'Spacious\nInterior',
+    body: 'Thoughtfully designed space for passengers, making every ride enjoyable.',
+  },
+  {
+    title: 'Ambient\nLighting',
+    body: 'Soft, customizable interior lighting enhances comfort and driving experience.',
+  },
+];
+---
+
+<section class="interior" data-interior>
+  <div class="interior__top">
+    <h2 class="interior__title" data-interior-title>
+      Redefining Every Drive with Smarter Innovation
+    </h2>
+    <Image
+      src={interiorCars}
+      alt="Three views of the VoltACar: rear three-quarter, head-on, and rear"
+      widths={[768, 1280, 1600, 2000]}
+      sizes="100vw"
+      loading="lazy"
+      decoding="async"
+      class="interior__image"
+      data-interior-image
+    />
+  </div>
+
+  <ul class="interior__cols" role="list">
+    {
+      features.map((f) => (
+        <li class="col" data-interior-col>
+          <h3 class="col__title">{f.title}</h3>
+          <p class="col__body">{f.body}</p>
+        </li>
+      ))
+    }
+  </ul>
+</section>
+
+<style>
+  .interior {
+    background-color: var(--c-white);
+  }
+
+  /* ---------- Heading + render ---------- */
+
+  .interior__top {
+    container-type: inline-size;
+    position: relative;
+    /* 205 / 1600 — keeps the gap above the render proportional, so the image
+       still lands flush with the bottom of the 964px area. */
+    padding-top: 12.8125%;
+  }
+
+  /* Offsets are in cqw, not %: a percentage `top` on an absolutely positioned
+     element resolves against the container's height, which would put the
+     heading at 60px instead of the designed 100px. */
+  .interior__title {
+    position: absolute;
+    top: 6.25cqw; /* 100 / 1600 */
+    left: 6.9375cqw; /* 111 / 1600 */
+    max-width: 50.1875rem; /* 803 */
+    margin: 0;
+    font-size: var(--fs-h2); /* 64 */
+    font-weight: var(--fw-bold);
+    line-height: var(--lh-tight);
+    color: var(--c-ink);
+  }
+
+  .interior__image {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  /* ---------- Feature columns ---------- */
+
+  .interior__cols {
+    display: flex;
+    justify-content: center;
+    /* Figma #56:198: 0 100px 100px */
+    padding: 0 var(--gutter) var(--gutter);
+    margin: 0;
+  }
+
+  .col {
+    position: relative;
+    flex: 0 1 21.875rem; /* 350 */
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-80);
+    padding: var(--sp-80) var(--sp-24) var(--sp-24);
+  }
+
+  /* The 0.5px rule is a pseudo-element rather than a border so it can be
+     drawn in on scroll. Figma puts one on every column, including the last. */
+  .col::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 0.5px;
+    height: 100%;
+    background-color: var(--c-steel);
+    transform: scaleY(var(--rule-scale, 1));
+    transform-origin: top center;
+  }
+
+  .col__title {
+    /* Titles carry an explicit newline — see the note above. */
+    white-space: pre-line;
+    font-size: var(--fs-h6); /* 24 — Figma style_55805047 */
+    font-weight: var(--fw-medium);
+    line-height: var(--lh-tight);
+    color: var(--c-ink);
+  }
+
+  .col__body {
+    font-size: var(--fs-body);
+    line-height: var(--lh-body);
+    color: var(--c-muted);
+  }
+
+  /* ---------- Responsive ---------- */
+
+  /* Below the desktop frame the absolute heading has no room to sit over the
+     render, so it returns to normal flow above it. */
+  @media (max-width: 1200px) {
+    .interior__top {
+      padding-top: 0;
+    }
+
+    .interior__title {
+      position: static;
+      max-width: 40rem;
+      padding: var(--section-gap-sm) var(--gutter) var(--sp-48);
+    }
+  }
+
+  @media (max-width: 992px) {
+    .interior__cols {
+      flex-wrap: wrap;
+      gap: var(--sp-32) 0;
+    }
+
+    .col {
+      flex: 0 1 50%;
+      gap: var(--sp-32);
+      padding-top: var(--sp-48);
+    }
+
+    /* On two columns the rule belongs only between them, not on the outside. */
+    .col:nth-child(even)::after {
+      display: none;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .col {
+      flex: 0 1 100%;
+      padding-inline: 0;
+    }
+
+    .col::after {
+      display: none;
+    }
+
+    .col + .col {
+      border-top: 0.5px solid var(--c-steel);
+      padding-top: var(--sp-32);
+    }
+  }
+</style>
+
+<script>
+  import { gsap, prefersReducedMotion } from '../../scripts/motion';
+
+  const section = document.querySelector<HTMLElement>('[data-interior]');
+
+  if (section && !prefersReducedMotion()) {
+    const title = section.querySelector('[data-interior-title]');
+    const image = section.querySelector('[data-interior-image]');
+    const cols = section.querySelectorAll<HTMLElement>('[data-interior-col]');
+
+    const tl = gsap.timeline({
+      defaults: { ease: 'power3.out' },
+      scrollTrigger: { trigger: section, start: 'top 70%', once: true },
+    });
+
+    if (title) {
+      tl.fromTo(
+        title,
+        { opacity: 0, y: 30 },
+        { opacity: 1, y: 0, duration: 0.9 },
+        0,
+      );
+    }
+
+    if (image) {
+      tl.fromTo(
+        image,
+        { opacity: 0, scale: 1.06 },
+        { opacity: 1, scale: 1, duration: 1.2, clearProps: 'transform' },
+        0.15,
+      );
+    }
+
+    if (cols.length) {
+      // Rules draw downward, then the copy rises behind them.
+      tl.fromTo(
+        cols,
+        { '--rule-scale': 0 },
+        { '--rule-scale': 1, duration: 0.7, stagger: 0.1 },
+        0.4,
+      ).fromTo(
+        cols,
+        { opacity: 0, y: 24 },
+        { opacity: 1, y: 0, duration: 0.7, stagger: 0.1 },
+        0.5,
+      );
+    }
+  }
+</script>
