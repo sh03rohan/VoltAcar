@@ -111,6 +111,19 @@
   --z-header: 100;
   --z-dropdown: 200;
   --z-drawer: 300;
+
+  /* Height of the pinned header. Full-viewport sections use this to keep
+     their content clear of it — the Figma frames have no header over them,
+     so the design's own top padding is not enough on its own. */
+  --header-h: 5rem; /* 80 */
+}
+
+/* Below the nav breakpoint the CTA is replaced by the menu button and the
+   header gets shorter. */
+@media (max-width: 1100px) {
+  :root {
+    --header-h: 4rem; /* 64 */
+  }
 }
 
 /* Breakpoints are documented here for reference; CSS custom properties

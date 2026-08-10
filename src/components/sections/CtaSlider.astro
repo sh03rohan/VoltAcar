@@ -1,0 +1,263 @@
+---
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+import ctaRemote from '../../assets/images/cta-remote.webp';
+import ctaHome from '../../assets/images/cta-home.webp';
+import ctaRoadside from '../../assets/images/cta-roadside.webp';
+
+/**
+ * Charging CTA banners — Figma cards "1" (#37:40), "2" (#55:139) and
+ * "3" (#55:91), each a 1600x780 frame with a full-bleed render, a radial
+ * scrim, a 64px two-line heading and a 326px body pinned to the bottom.
+ *
+ * The three are presented as a horizontal slider driven by vertical scroll:
+ * the section pins on entry, the track translates left as the page scrolls,
+ * and the pin releases once the third card is reached. See the script below.
+ */
+interface Card {
+  /** First heading line — cream. */
+  lead: string;
+  /** Second heading line — lime. */
+  accent: string;
+  body: string;
+  image: ImageMetadata;
+  alt: string;
+  /**
+   * Focal point for the `cover` fit. The assets are already cropped to the
+   * card's exact window, so this only decides what a taller-than-2.05 panel
+   * trims from the sides — biased right to keep the car fully in frame.
+   */
+  focus: string;
+  /** The card's radial scrim, taken from its Figma fill. */
+  scrim: string;
+}
+
+const cards: Card[] = [
+  {
+    lead: 'Power Up',
+    accent: 'Anywhere, Anytime',
+    body: 'Even in remote locations like hills or scenic spots, our network keeps your car charged and ready.',
+    image: ctaRemote,
+    alt: 'A VoltACar charging at a station on a mountain ridge',
+    focus: '85% center',
+    scrim:
+      'radial-gradient(circle at 85% 79%, rgba(19,20,0,0) 0%, rgba(19,20,0,0.34) 78%, rgba(19,20,0,0.59) 100%)',
+  },
+  {
+    lead: 'Charge',
+    accent: 'Comfortably at Home',
+    body: 'Plug in overnight and wake up to a full battery, ready for a day of driving.',
+    image: ctaHome,
+    alt: 'A VoltACar charging on a driveway beside a home wallbox',
+    focus: '85% center',
+    scrim:
+      'radial-gradient(circle at 101% 100%, rgba(19,20,0,0) 0%, rgba(19,20,0,0.39) 69%, rgba(19,20,0,0.78) 100%)',
+  },
+  {
+    lead: 'Fast',
+    accent: 'Charging on the Go',
+    body: 'Convenient roadside stations let you recharge quickly, keeping your journey smooth and uninterrupted.',
+    image: ctaRoadside,
+    alt: 'A VoltACar at a roadside charging point in a city square',
+    focus: '85% center',
+    scrim:
+      'radial-gradient(circle at 101% 98%, rgba(19,20,0,0) 0%, rgba(19,20,0,0.39) 51%, rgba(19,20,0,0.78) 100%)',
+  },
+];
+---
+
+<section class="cta" data-cta-slider aria-roledescription="carousel" aria-label="Charging options">
+  <div class="cta__track" data-cta-track>
+    {
+      cards.map((card, i) => (
+        <article
+          class="panel on-dark"
+          data-cta-panel
+          aria-label={`${i + 1} of ${cards.length}`}
+        >
+          <Image
+            src={card.image}
+            alt={card.alt}
+            widths={[768, 1280, 1600, 2000]}
+            sizes="100vw"
+            loading={i === 0 ? 'eager' : 'lazy'}
+            decoding="async"
+            class="panel__bg"
+            style={`object-position:${card.focus}`}
+          />
+          <div class="panel__scrim" style={`background:${card.scrim}`}></div>
+
+          <div class="panel__content">
+            <h2 class="panel__title">
+              {card.lead}<br /><span class="panel__accent">{card.accent}</span>
+            </h2>
+            <p class="panel__body">{card.body}</p>
+          </div>
+        </article>
+      ))
+    }
+  </div>
+</section>
+
+<style>
+  .cta {
+    position: relative;
+    /* Guards against the track ever widening the page while it is offset. */
+    overflow: hidden;
+  }
+
+  .cta__track {
+    display: flex;
+    width: max-content;
+    will-change: transform;
+  }
+
+  .panel {
+    position: relative;
+    flex: none;
+    width: 100vw;
+    height: 100svh;
+    /* The Figma card is 1600x780; keep it from becoming a letterbox strip on
+       short landscape viewports. */
+    min-height: 34rem;
+    overflow: hidden;
+    isolation: isolate;
+  }
+
+  .panel__bg {
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .panel__scrim {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+  }
+
+  /* Figma #af96d078: the copy block sits at (100, 80) and is 620 tall with
+     the heading and body pushed to its ends. */
+  .panel__content {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
+    padding: var(--sp-80) var(--gutter);
+  }
+
+  .panel__title {
+    max-width: 50.4375rem; /* 807 */
+    font-size: var(--fs-h2); /* 64 */
+    font-weight: var(--fw-bold);
+    line-height: var(--lh-tight);
+    color: var(--c-cream);
+  }
+
+  .panel__accent {
+    color: var(--c-primary);
+  }
+
+  .panel__body {
+    max-width: 20.375rem; /* 326 */
+    font-size: var(--fs-body);
+    line-height: var(--lh-body);
+    color: var(--c-cream);
+  }
+
+  /* The panel fills the viewport, so the pinned header sits over its top
+     edge. At desktop the design's 80px padding already clears an 80px header;
+     below that the header stays 64px while the padding would shrink, so the
+     heading has to be pushed clear explicitly. */
+  @media (max-width: 1100px) {
+    .panel__content {
+      padding-top: calc(var(--header-h) + var(--sp-24));
+    }
+  }
+
+  @media (max-width: 768px) {
+    .panel__content {
+      padding-bottom: var(--sp-48);
+    }
+
+    .panel__body {
+      max-width: 26rem;
+    }
+  }
+
+  /* On a narrow portrait panel the 36px floor of --fs-h2 runs the second
+     heading line into the gutter, so it scales with the viewport instead. */
+  @media (max-width: 600px) {
+    .panel__title {
+      font-size: clamp(1.75rem, 8vw, 2.25rem);
+    }
+
+    /* Portrait crops horizontally; ease off the right bias so the car is not
+       reduced to its rear quarter. */
+    .panel__bg {
+      object-position: 72% center !important;
+    }
+  }
+
+  /* Without the pinned slider the cards simply stack, so the content is never
+     dependent on the scroll animation running. */
+  @media (prefers-reduced-motion: reduce) {
+    .cta__track {
+      flex-direction: column;
+      width: 100%;
+    }
+
+    .panel {
+      width: 100%;
+      height: auto;
+      min-height: 0;
+      aspect-ratio: 1600 / 780;
+    }
+  }
+</style>
+
+<script>
+  import { gsap, ScrollTrigger, prefersReducedMotion } from '../../scripts/motion';
+
+  const section = document.querySelector<HTMLElement>('[data-cta-slider]');
+  const track = section?.querySelector<HTMLElement>('[data-cta-track]');
+
+  if (section && track && !prefersReducedMotion()) {
+    /**
+     * Distance the track must travel: its full width minus one viewport, so
+     * the run ends exactly when the last card is flush with the right edge.
+     * Read lazily so ScrollTrigger recalculates it on resize rather than
+     * baking in the width at load.
+     */
+    const distance = (): number => track.scrollWidth - window.innerWidth;
+
+    const travel = gsap.to(track, {
+      x: () => -distance(),
+      ease: 'none',
+    });
+
+    ScrollTrigger.create({
+      trigger: section,
+      // Pins the moment the section's top meets the viewport's top, so the
+      // first card is held full-bleed before anything moves sideways.
+      start: 'top top',
+      // Scroll length equals the horizontal travel, so one pixel of scroll is
+      // one pixel of slide and the pin releases on the last card.
+      end: () => `+=${distance()}`,
+      pin: true,
+      // A little smoothing so the track eases toward the scroll position in
+      // both directions rather than tracking it rigidly.
+      scrub: 0.8,
+      anticipatePin: 1,
+      invalidateOnRefresh: true,
+      animation: travel,
+    });
+
+    // The panels are sized in viewport units, so a resize changes both the
+    // travel distance and the pin length.
+    window.addEventListener('resize', () => ScrollTrigger.refresh());
+  }
+</script>

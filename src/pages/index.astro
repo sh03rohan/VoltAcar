@@ -7,6 +7,7 @@ import AlternatingBlock from '../components/sections/AlternatingBlock.astro';
 import CarHotspots from '../components/sections/CarHotspots.astro';
 import QuoteBand from '../components/sections/QuoteBand.astro';
 import InteriorFeatures from '../components/sections/InteriorFeatures.astro';
+import CtaSlider from '../components/sections/CtaSlider.astro';
 import { site } from '../config/site';
 
 import featureAutonomous from '../assets/images/feature-autonomous.webp';
@@ -71,10 +72,13 @@ import featureRange from '../assets/images/feature-range.webp';
   {/* Figma #59:207 */}
   <InteriorFeatures />
 
-  {/* Remaining Home sections follow in Sub-phase 8 onward. */}
+  {/* Figma cards #37:40, #55:139, #55:91 — pinned horizontal slider */}
+  <CtaSlider />
+
+  {/* Remaining Home sections follow in Sub-phase 9 onward. */}
   <section class="filler">
     <div class="container">
-      <p>Next: the CTA banner.</p>
+      <p>Next: the newsletter band.</p>
     </div>
   </section>
 </BaseLayout>
