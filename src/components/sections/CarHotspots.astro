@@ -1,0 +1,455 @@
+---
+import { Image } from 'astro:assets';
+import Icon from '../common/Icon.astro';
+import carTop from '../../assets/images/hotspot-car.webp';
+
+/**
+ * Annotated car diagram — Figma #48:60, reused on the Features page.
+ *
+ * A 1600x780 cream frame with an 860x464 stage centred inside it. Five
+ * markers sit on the render, each with a card floating above it; every card's
+ * centre lines up with its marker's centre.
+ *
+ * Departure from the Figma frame, at the client's request: the design shows
+ * all five cards at once, but here only the glowing dots are visible and a
+ * card is revealed on hover or focus. Positions are unchanged.
+ *
+ * Marker and card coordinates below are the raw Figma values inside that
+ * 860x464 stage, converted to percentages so the whole diagram scales as one.
+ */
+const STAGE_W = 860;
+const STAGE_H = 464;
+
+interface Hotspot {
+  title: string;
+  body: string;
+  /** Marker top-left within the stage. */
+  mx: number;
+  my: number;
+  /** Card top-left and width within the stage. */
+  cx: number;
+  cy: number;
+  cw: number;
+}
+
+const hotspots: Hotspot[] = [
+  {
+    title: 'Panoramic Roof',
+    body: 'Expansive roof design for natural light, fresh air, and a feeling of openness.',
+    mx: 301, my: 123, cx: 226, cy: 19, cw: 195,
+  },
+  {
+    title: 'Effortless Rear Access',
+    body: 'Compact, Professional-Grade Imaging.',
+    mx: 546, my: 117, cx: 471, cy: 18, cw: 195,
+  },
+  {
+    title: 'Effortless Rear Access',
+    body: 'Smooth, wide-opening back door for easy entry and cargo loading.',
+    mx: 36, my: 191, cx: -38, cy: 87, cw: 195,
+  },
+  {
+    title: 'Sleek Side Entry',
+    body: 'Reinforced, quiet, and secure doors designed for convenience and safety.',
+    mx: 380, my: 328, cx: 305, cy: 196, cw: 195,
+  },
+  {
+    title: 'Premium Grip Tires',
+    body: 'Engineered for smooth handling on every road surface.',
+    mx: 695, my: 400, cx: 608.63, cy: 285, cw: 219,
+  },
+];
+
+const pct = (value: number, total: number): string =>
+  `${((value / total) * 100).toFixed(4)}%`;
+
+const MARKER = 46;
+const POINTER_H = 26.67;
+const POINTER_OVERLAP = 10; // Figma column gap of -10
+
+/**
+ * Cards are anchored by their *bottom* edge, derived from the marker, rather
+ * than by a top coordinate. A top coordinate silently assumes one fixed card
+ * height, so any size change (as on small screens) drops the card onto its
+ * dot. Bottom-anchoring keeps it above the dot at any height.
+ *
+ * The pointer tip should land on the marker's centre, and the tab overlaps the
+ * card by 10px, so the card's bottom sits at:
+ *   marker centre - (pointer height - overlap)
+ */
+const anchorY = (my: number): number =>
+  my + MARKER / 2 - (POINTER_H - POINTER_OVERLAP);
+
+const centreX = (mx: number): number => mx + MARKER / 2;
+---
+
+<section class="hotspots" data-hotspots>
+  <div class="hotspots__scroll">
+    <div class="hotspots__stage">
+    <Image
+      src={carTop}
+      alt="Top-down view of the VoltACar showing its roof, doors, and wheels"
+      widths={[860, 1200, 1720]}
+      sizes="860px"
+      loading="lazy"
+      decoding="async"
+      class="hotspots__car"
+    />
+
+    {
+      hotspots.map((h, i) => (
+        <>
+          <button
+            type="button"
+            class="pin"
+            data-pin
+            data-index={i}
+            aria-expanded="false"
+            aria-controls={`hotspot-${i}`}
+            style={`--x:${pct(h.mx, STAGE_W)};--y:${pct(h.my, STAGE_H)};--pin-delay:${i * 0.45}s`}
+          >
+            <span class="visually-hidden">{h.title}</span>
+            <span class="pin__core">
+              <Icon name="plus" size={20} />
+            </span>
+          </button>
+
+          <div
+            class="card"
+            id={`hotspot-${i}`}
+            data-card
+            data-index={i}
+            style={`--x:${pct(h.cx, STAGE_W)};--w:${pct(h.cw, STAGE_W)};--anchor:${pct(anchorY(h.my), STAGE_H)}`}
+          >
+            <h3 class="card__title">{h.title}</h3>
+            <p class="card__body">{h.body}</p>
+          </div>
+
+          {/* Positioned against the stage, not the card, so it stays on the
+              marker regardless of the card's height or horizontal clamping. */}
+          <span
+            class="card__pointer"
+            data-pointer
+            data-index={i}
+            aria-hidden="true"
+            style={`--px:${pct(centreX(h.mx), STAGE_W)};--anchor:${pct(anchorY(h.my), STAGE_H)}`}
+          />
+        </>
+      ))
+    }
+    </div>
+  </div>
+</section>
+
+<style>
+  .hotspots {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 48.75rem; /* 780 */
+    padding-block: var(--section-gap-sm);
+    background-color: var(--c-cream);
+  }
+
+  .hotspots__scroll {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    max-width: 100%;
+    padding-inline: var(--gutter);
+  }
+
+  /* The stage shrinks to fit the viewport and everything inside it is sized in
+     cqw — percentages of the stage's own width — so the dots, cards, and glow
+     all scale together and stay locked to the same points on the render. The
+     diagram never needs horizontal scrolling. */
+  .hotspots__stage {
+    container-type: inline-size;
+    position: relative;
+    flex: 0 1 auto;
+    width: min(53.75rem, 100%); /* 860 */
+    aspect-ratio: 860 / 464;
+    /* One card overhangs the stage by 38px (4.42%); leave room beside it. */
+    margin-inline: 4.42%;
+  }
+
+  .hotspots__car {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  /* ---------- Markers (#143:641 and siblings) ---------- */
+
+  .pin {
+    position: absolute;
+    left: var(--x);
+    top: var(--y);
+    width: 5.3488cqw; /* 46 / 860 */
+    aspect-ratio: 1;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    /* rgba(255,255,255,0.54) ring, 32px radius */
+    background-color: rgba(255, 255, 255, 0.54);
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 2;
+    transition:
+      transform var(--dur) var(--ease-out),
+      box-shadow var(--dur) var(--ease-out);
+    /* The white ring is what glows. Staggered per pin via --pin-delay so they
+       breathe out of sync rather than blinking together. */
+    animation: pin-glow 3.2s var(--ease-in-out) infinite;
+    animation-delay: var(--pin-delay, 0s);
+  }
+
+  @keyframes pin-glow {
+    0%,
+    100% {
+      box-shadow:
+        0 0 0 0 rgba(255, 255, 255, 0.55),
+        0 0 1.3953cqw 0.2326cqw rgba(255, 255, 255, 0.45);
+    }
+    50% {
+      box-shadow:
+        0 0 0 1.0465cqw rgba(255, 255, 255, 0),
+        0 0 2.5581cqw 0.814cqw rgba(255, 255, 255, 0.9);
+    }
+  }
+
+  /* `animation: none` rather than paused — a running animation would beat a
+     plain box-shadow declaration and the held state would never show. */
+  .pin:hover,
+  .pin:focus-visible,
+  .pin[aria-expanded='true'] {
+    transform: scale(1.12);
+    animation: none;
+    box-shadow:
+      0 0 0 0.6977cqw rgba(255, 255, 255, 0.38),
+      0 0 3.2558cqw 1.1628cqw rgba(255, 255, 255, 1);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .pin {
+      animation: none;
+      box-shadow: 0 0 1.6279cqw 0.3488cqw rgba(255, 255, 255, 0.6);
+    }
+  }
+
+  .pin__core {
+    display: grid;
+    place-items: center;
+    width: 69.57%; /* 32 / 46 */
+    height: 69.57%;
+    background-color: var(--c-ink);
+    border-radius: 50%;
+    /* The icon strokes use currentColor, so it inherits from here. */
+    color: var(--c-primary);
+  }
+
+  /* The <svg> is rendered by Icon.astro, so it carries that component's scope
+     rather than this one's — a plain `.pin__icon` rule would never match. */
+  .pin__core :global(svg) {
+    width: 60%;
+    height: 60%;
+  }
+
+  /* ---------- Cards (#143:676 and siblings) ---------- */
+
+  .card {
+    position: absolute;
+    left: var(--x);
+    /* Bottom edge sits just above the marker — see anchorY() above. */
+    bottom: calc(100% - var(--anchor));
+    width: var(--w);
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6977cqw; /* 6 — Figma #1caede89 */
+    padding: 1.3953cqw; /* 12 */
+    background-color: var(--c-white);
+    border-radius: 0.4651cqw; /* 4 */
+    box-shadow: var(--shadow-card);
+
+    /* Hidden until its dot is hovered or focused. Grows from the pointer tab
+       at the bottom, so it reads as unfolding out of the marker. */
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(0.93cqw) scale(0.94);
+    transform-origin: bottom center;
+    pointer-events: none;
+    transition:
+      opacity 220ms var(--ease-out),
+      transform 320ms cubic-bezier(0.34, 1.42, 0.64, 1),
+      visibility 320ms;
+  }
+
+  .card.is-open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+    box-shadow: var(--shadow-lg);
+    z-index: 3;
+  }
+
+  /* 14px at the 860px stage, scaling with it. */
+  .card__title {
+    font-size: 1.6279cqw;
+    font-weight: var(--fw-medium);
+    line-height: 1.2;
+    color: var(--c-ink);
+  }
+
+  .card__body {
+    font-size: 1.6279cqw;
+    font-weight: var(--fw-regular);
+    line-height: var(--lh-body);
+    color: var(--c-muted);
+  }
+
+  /* The down-pointing tab. Sits on the marker's centre line, starting 10px
+     above the card's bottom edge so it overlaps the card exactly as the Figma
+     column gap of -10 does, with its tip reaching the marker centre. */
+  .card__pointer {
+    position: absolute;
+    left: var(--px);
+    top: calc(var(--anchor) - 1.1628cqw); /* 10 */
+    z-index: 2;
+    width: 2.7907cqw; /* 24 */
+    height: 3.1012cqw; /* 26.67 */
+    background-color: var(--c-white);
+    transform: translateX(-50%) scaleY(0.9);
+    transform-origin: top center;
+    clip-path: polygon(0 0, 100% 0, 50% 100%);
+
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition:
+      opacity 220ms var(--ease-out),
+      transform 320ms cubic-bezier(0.34, 1.42, 0.64, 1),
+      visibility 320ms;
+  }
+
+  .card__pointer.is-open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) scaleY(1);
+  }
+
+  /* The image, the dots, and their reveal behaviour are the same everywhere —
+     the stage simply scales, and the dots stay locked to the render because
+     every position is a percentage of it.
+     The one thing that cannot scale indefinitely is the card's text: below a
+     ~700px stage a proportional card would set type at 5-6px. Since only one
+     card is ever open, giving it a readable fixed size cannot collide with
+     another card, so it is widened and clamped inside the stage instead. */
+  @media (max-width: 900px) {
+    .hotspots {
+      min-height: 0;
+      padding-block: var(--section-gap);
+    }
+
+    .card {
+      --card-w: min(15rem, 62vw);
+      width: var(--card-w);
+      left: clamp(0px, var(--x), calc(100% - var(--card-w)));
+      padding: 0.625rem;
+      gap: 0.25rem;
+      border-radius: var(--r-sm);
+      transform: translateY(0.5rem) scale(0.94);
+    }
+
+    .card.is-open {
+      transform: translateY(0) scale(1);
+    }
+
+    .card__title,
+    .card__body {
+      font-size: 0.8125rem; /* 13 */
+    }
+
+    /* Keep the tab a usable size once the stage is small. */
+    .card__pointer {
+      width: 1rem;
+      height: 1.125rem;
+      top: calc(var(--anchor) - 0.4rem);
+    }
+  }
+</style>
+
+<script>
+  import { gsap, prefersReducedMotion } from '../../scripts/motion';
+
+  const section = document.querySelector<HTMLElement>('[data-hotspots]');
+
+  if (section) {
+    const pins = Array.from(section.querySelectorAll<HTMLButtonElement>('[data-pin]'));
+    const cards = Array.from(section.querySelectorAll<HTMLElement>('[data-card]'));
+    const pointers = Array.from(section.querySelectorAll<HTMLElement>('[data-pointer]'));
+
+    const canHover = window.matchMedia('(hover: hover)').matches;
+
+    const setOpen = (index: number, open: boolean): void => {
+      const pin = pins[index];
+      const card = cards[index];
+      if (!pin || !card) return;
+      pin.setAttribute('aria-expanded', String(open));
+      card.classList.toggle('is-open', open);
+      pointers[index]?.classList.toggle('is-open', open);
+    };
+
+    const closeAll = (): void => pins.forEach((_, i) => setOpen(i, false));
+
+    pins.forEach((pin, index) => {
+      // Pointer. Only one card is ever open, so moving between dots swaps
+      // cleanly rather than leaving a trail of them open.
+      pin.addEventListener('mouseenter', () => {
+        closeAll();
+        setOpen(index, true);
+      });
+      pin.addEventListener('mouseleave', () => setOpen(index, false));
+
+      // Keyboard — the same reveal, so the content is not hover-only.
+      pin.addEventListener('focus', () => {
+        closeAll();
+        setOpen(index, true);
+      });
+      pin.addEventListener('blur', () => setOpen(index, false));
+
+      // Touch, where hover does not exist: tap toggles.
+      pin.addEventListener('click', (event) => {
+        if (canHover) return;
+        event.preventDefault();
+        const open = pin.getAttribute('aria-expanded') === 'true';
+        closeAll();
+        setOpen(index, !open);
+      });
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') closeAll();
+    });
+
+    if (!prefersReducedMotion()) {
+      // Markers pop in on scroll; the cards stay hidden until hovered.
+      gsap.fromTo(
+        pins,
+        { scale: 0, opacity: 0 },
+        {
+          scale: 1,
+          opacity: 1,
+          duration: 0.6,
+          ease: 'back.out(1.7)',
+          stagger: 0.08,
+          // Hand the transform back to CSS, otherwise the inline scale(1)
+          // left behind would beat the :hover rule.
+          clearProps: 'transform,opacity',
+          scrollTrigger: { trigger: section, start: 'top 70%', once: true },
+        },
+      );
+    }
+  }
+</script>

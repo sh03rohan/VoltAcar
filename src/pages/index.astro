@@ -4,6 +4,7 @@ import Header from '../components/layout/Header.astro';
 import Hero from '../components/sections/Hero.astro';
 import MissionBand from '../components/sections/MissionBand.astro';
 import AlternatingBlock from '../components/sections/AlternatingBlock.astro';
+import CarHotspots from '../components/sections/CarHotspots.astro';
 import { site } from '../config/site';
 
 import featureAutonomous from '../assets/images/feature-autonomous.webp';
@@ -57,10 +58,12 @@ import featureRange from '../assets/images/feature-range.webp';
     bodyWidth={444}
   />
 
-  {/* Remaining Home sections follow in Sub-phase 5 onward. */}
+  <CarHotspots />
+
+  {/* Remaining Home sections follow in Sub-phase 6 onward. */}
   <section class="filler">
     <div class="container">
-      <p>Next: the interactive car hotspot diagram.</p>
+      <p>Next: the founder quote band.</p>
     </div>
   </section>
 </BaseLayout>

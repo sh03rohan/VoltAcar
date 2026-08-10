@@ -46,7 +46,7 @@ const isBranchCurrent = (link: (typeof navigation)[number]): boolean =>
                   ]}
                 >
                   {link.label}
-                  <Icon name="chevron" size={20} class="nav__chevron" />
+                  <Icon name="chevron" size={20} />
                 </button>
                 <ul class="dropdown" role="list" data-dropdown>
                   {link.children.map((child) => (
@@ -121,7 +121,7 @@ const isBranchCurrent = (link: (typeof navigation)[number]): boolean =>
                     data-disclosure
                   >
                     {link.label}
-                    <Icon name="chevron" size={20} class="drawer__chevron" />
+                    <Icon name="chevron" size={20} />
                   </button>
                   <ul class="drawer__sub" role="list" data-disclosure-panel hidden>
                     {link.children.map((child) => (
@@ -236,11 +236,13 @@ const isBranchCurrent = (link: (typeof navigation)[number]): boolean =>
     color: var(--c-primary);
   }
 
-  .nav__chevron {
+  /* Icons come from Icon.astro and carry its scope, not this component's, so
+     they have to be reached with :global() from a scoped ancestor. */
+  .nav__trigger :global(svg) {
     transition: transform var(--dur-fast) var(--ease-out);
   }
 
-  .nav__trigger[aria-expanded='true'] .nav__chevron {
+  .nav__trigger[aria-expanded='true'] :global(svg) {
     transform: rotate(180deg);
   }
 
@@ -370,12 +372,12 @@ const isBranchCurrent = (link: (typeof navigation)[number]): boolean =>
     color: var(--c-primary);
   }
 
-  .drawer__disclosure[aria-expanded='true'] .drawer__chevron {
-    transform: rotate(180deg);
+  .drawer__disclosure :global(svg) {
+    transition: transform var(--dur-fast) var(--ease-out);
   }
 
-  .drawer__chevron {
-    transition: transform var(--dur-fast) var(--ease-out);
+  .drawer__disclosure[aria-expanded='true'] :global(svg) {
+    transform: rotate(180deg);
   }
 
   .drawer__sub {

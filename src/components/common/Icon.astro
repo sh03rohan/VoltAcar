@@ -7,7 +7,7 @@
  * files so they can inherit `currentColor` and be animated.
  */
 interface Props {
-  name: 'arrow' | 'chevron' | 'menu' | 'close';
+  name: 'arrow' | 'chevron' | 'menu' | 'close' | 'plus';
   size?: number;
   class?: string;
 }
@@ -37,6 +37,14 @@ const { name, size = 20, class: className } = Astro.props;
     )
   }
   {name === 'chevron' && <path d="M5 7.5 10 12.5 15 7.5" />}
+  {
+    name === 'plus' && (
+      <>
+        <path d="M4.167 10h11.666" />
+        <path d="M10 4.167v11.666" />
+      </>
+    )
+  }
   {
     name === 'menu' && (
       <>
