@@ -1,13 +1,10 @@
 ---
 import { Image } from 'astro:assets';
-import SocialIcon from '../common/SocialIcon.astro';
 import TeamProfile from './TeamProfile.astro';
-import { social } from '../../config/site';
 import { team as members } from '../../data/team';
 
 /**
- * "Meet Our Team" — Figma #103:189, with the revealed state taken from the
- * standalone #271:15877 where every card shows its overlay at once.
+ * "Meet Our Team" — Figma #103:189.
  *
  *   band    #FFFFFF, 180 of padding top and bottom
  *   header  #103:177  120 tall, space-between: a 64/1em heading at 445 and a
@@ -15,21 +12,19 @@ import { team as members } from '../../data/team';
  *   gap     80
  *   grid    #103:188  two rows of three 445x560 lime cards, 32 apart
  *
- * Each card carries the role as vertical type at (24, 39), a cut-out portrait,
- * and a 405x228 cream detail card inset 20 from the card's left, right and
- * foot. The detail card is hidden until the member is hovered or focused —
- * the frame draws it on one card only, which is the design showing its hover
- * state rather than a card that differs.
- *
+ * Each card is the role as vertical type at (24, 39) over a cut-out portrait.
  * Card internals are sized in `cqw` against the card itself, so the whole
  * composition scales with the column instead of needing a breakpoint per
  * measurement. The card's fixed ratio means those units track its height too.
  *
- * Clicking a card opens that member's full-screen profile (TeamProfile). The
- * trigger is a transparent button laid over the card rather than a handler on
- * the card itself, so it is a real control for keyboard and assistive tech. It
- * sits above the portrait but below the detail card, which lets the social
- * links inside that card stay clickable.
+ * The frame also draws a 405x228 cream detail card on hover, carrying the
+ * name, bio and social links. That is deliberately not built: the same
+ * information — and more of it — now belongs to the full-screen profile, so
+ * showing it twice would only compete with itself. Clicking anywhere on a card
+ * opens that member's profile (TeamProfile) instead.
+ *
+ * The trigger is a transparent button laid over the card rather than a handler
+ * on the card itself, so it is a real control for keyboard and assistive tech.
  */
 ---
 
@@ -61,33 +56,13 @@ import { team as members } from '../../data/team';
               decoding="async"
             />
 
+            {/* The label carries the role too, since the vertical type is
+                decorative and hidden from assistive tech. */}
             <button class="member__open" type="button" data-tp-open={i}>
-              <span class="visually-hidden">{`View ${member.name}’s profile`}</span>
+              <span class="visually-hidden">
+                {`View ${member.name}’s profile — ${member.role}`}
+              </span>
             </button>
-
-            <div class="member__card">
-              <p class="member__name">{member.name}</p>
-              {/* Carries the role for anyone not reading the vertical type. */}
-              <p class="member__bio">
-                <span class="visually-hidden">{member.role}. </span>
-                {member.bio}
-              </p>
-              <ul class="member__social" role="list">
-                {social.map((channel) => (
-                  <li>
-                    <a
-                      class="member__link"
-                      href={channel.href}
-                      rel="noopener noreferrer"
-                      target="_blank"
-                    >
-                      <SocialIcon name={channel.icon} />
-                      <span class="visually-hidden">{`${member.name} on ${channel.label}`}</span>
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
           </li>
         ))
       }
@@ -178,6 +153,26 @@ import { team as members } from '../../data/team';
     width: 100%;
     height: 100%;
     object-fit: cover;
+    transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  /* With the detail card gone, nothing but the cursor said these were
+     clickable. The portrait leans forward instead — enough to read as a
+     control, small enough to leave the composition alone. */
+  .member:hover .member__photo,
+  .member:focus-within .member__photo {
+    transform: scale(1.035);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .member__photo {
+      transition: none;
+    }
+
+    .member:hover .member__photo,
+    .member:focus-within .member__photo {
+      transform: none;
+    }
   }
 
   /* Covers the whole card so anywhere on the portrait opens the profile. It
@@ -192,86 +187,6 @@ import { team as members } from '../../data/team';
     background: transparent;
     cursor: pointer;
     appearance: none;
-  }
-
-  /* ---------- Detail card ---------- */
-
-  .member__card {
-    position: absolute;
-    z-index: 4;
-    right: 4.494cqw; /* 20 */
-    bottom: 4.494cqw;
-    left: 4.494cqw;
-    display: flex;
-    flex-direction: column;
-    /* 228 when the bio runs to three lines, which is the frame's case; longer
-       bios grow the card rather than being clipped by a fixed height. */
-    min-height: 51.236cqw;
-    padding: 5.393cqw; /* 24 */
-    border-radius: var(--r-xs); /* 2 */
-    background-color: var(--c-cream);
-    color: var(--c-ink);
-
-    opacity: 0;
-    transform: translateY(8%);
-    transition:
-      opacity 0.32s ease,
-      transform 0.32s ease;
-    /* Invisible but still hit-testable, so at rest it would shadow the profile
-       trigger across the bottom third of the card. It takes pointer events
-       back only once it is actually on screen. */
-    pointer-events: none;
-  }
-
-  /* Focus rather than focus-visible: the reveal has to happen for the social
-     links inside, which are reachable by keyboard while the card is still at
-     zero opacity. Opacity keeps them in the tab order — `visibility: hidden`
-     would remove them and make the card unreachable without a pointer. */
-  .member:hover .member__card,
-  .member:focus-within .member__card {
-    opacity: 1;
-    transform: translateY(0);
-    pointer-events: auto;
-  }
-
-  .member__name {
-    font-size: 5.393cqw; /* 24 */
-    font-weight: var(--fw-semibold);
-    line-height: var(--lh-body);
-  }
-
-  .member__bio {
-    margin-top: 1.798cqw; /* 8 */
-    margin-bottom: 7.191cqw; /* 32 */
-    font-size: 3.596cqw; /* 16 */
-    line-height: var(--lh-body);
-  }
-
-  .member__social {
-    display: flex;
-    gap: 3.146cqw; /* 14 */
-    margin: auto 0 0;
-    padding: 0;
-  }
-
-  .member__link {
-    display: block;
-    color: var(--c-ink);
-    transition: color 0.2s ease;
-  }
-
-  .member__link :global(svg) {
-    display: block;
-    width: 7.191cqw; /* 32 */
-    height: 7.191cqw;
-  }
-
-  /* The frame draws no hover for these, so it is chosen rather than measured.
-     Steel is the design's usual accent but lands at 2.4:1 on cream — under the
-     3:1 floor for graphics — so the state darkens instead of lightening. */
-  .member__link:hover,
-  .member__link:focus-visible {
-    color: var(--c-muted);
   }
 
   /* ---------- Responsive ---------- */
@@ -302,23 +217,6 @@ import { team as members } from '../../data/team';
          the frame's full 445 measure to read. */
       max-width: 27.8125rem;
       margin-inline: auto;
-    }
-  }
-
-  /* Without hover there is nothing to reveal the card with, and a tap would
-     have to be spent on it, so it simply stays open. */
-  @media (hover: none) {
-    .member__card {
-      opacity: 1;
-      transform: none;
-      pointer-events: auto;
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .member__card {
-      transition-duration: 0.01ms;
-      transform: none;
     }
   }
 </style>
