@@ -4,9 +4,21 @@ import Header from '../components/layout/Header.astro';
 import Footer from '../components/layout/Footer.astro';
 import PageHero from '../components/sections/PageHero.astro';
 import Newsletter from '../components/sections/Newsletter.astro';
-import { site } from '../config/site';
+import Button from '../components/common/Button.astro';
+import TextField from '../components/forms/TextField.astro';
+import RadioGroup from '../components/forms/RadioGroup.astro';
+import Checkbox from '../components/forms/Checkbox.astro';
+import { site, forms, testDrive } from '../config/site';
 
 import driveHero from '../assets/images/test-drive-hero.webp';
+
+/* Same contract as the newsletter: an empty endpoint still validates and still
+   shows its success state, it just never sends. Leaving `action` off entirely
+   rather than empty keeps a no-JS submit from reloading the page. */
+const action = forms.testDrive || undefined;
+
+/* Nobody books a demo drive for yesterday. */
+const today = new Date().toISOString().slice(0, 10);
 ---
 
 <BaseLayout
@@ -33,9 +45,122 @@ import driveHero from '../assets/images/test-drive-hero.webp';
     bodyWidth={565}
   />
 
+  {/* Figma #118:546 — a white band, 80 above and below a 922 form. The frame
+      gives it no heading of any kind, so one is added and hidden: a form this
+      long needs a landmark, and a screen reader listing the page's sections
+      should not find an unnamed one between the hero and the pitch. */}
+  <section class="booking" aria-labelledby="booking-title">
+    <h2 class="visually-hidden" id="booking-title">Book a demo drive</h2>
+
+    <form class="booking__form" method="post" action={action} novalidate data-booking-form>
+      <div class="booking__row">
+        <TextField label="First name" name="firstName" autocomplete="given-name" required />
+        <TextField label="Last name" name="lastName" autocomplete="family-name" required />
+      </div>
+
+      <div class="booking__row">
+        <TextField
+          label="Email"
+          name="email"
+          type="email"
+          autocomplete="email"
+          inputmode="email"
+          required
+        />
+      </div>
+
+      <div class="booking__row">
+        <TextField
+          label="Phone Number"
+          name="phone"
+          type="tel"
+          autocomplete="tel"
+          inputmode="tel"
+          required
+        />
+        <TextField
+          label="Zip Code"
+          name="zip"
+          autocomplete="postal-code"
+          inputmode="numeric"
+          required
+        />
+      </div>
+
+      {/* Figma #118:568 — the frame preselects the first address (#118:572
+          is the set's Selected=True instance). */}
+      <RadioGroup
+        legend="Choose a location"
+        name="location"
+        options={[...testDrive.locations]}
+        value={testDrive.locations[0]}
+        required
+      />
+
+      <div class="booking__row">
+        <TextField label="Date" name="date" type="date" min={today} required />
+      </div>
+
+      {/* Figma #120:165 — nothing is preselected here, so the group is a real
+          choice rather than a default someone has to notice and change. */}
+      <RadioGroup legend="Available Time" name="time" options={[...testDrive.times]} tight required />
+
+      <div class="booking__foot">
+        <Checkbox name="consent" required>
+          By clicking “Book Now” below to book a demo drive, I authorize the company to contact me
+          at the phone number provided about my demo drive and to give me more information. By
+          booking a demo drive, I understand and agree to the <a href="/privacy-data">Terms of Use</a
+          > and acknowledge the <a href="/privacy-data">Data Privacy Notice</a>.
+        </Checkbox>
+
+        <Button label="Book Now" type="submit" variant="dark" size="sm" />
+      </div>
+    </form>
+  </section>
+
   {/* Figma #91:572 */}
   <Newsletter />
 
   {/* Figma #91:594 */}
   <Footer slot="footer" />
 </BaseLayout>
+
+<style>
+  /* #118:546 — white, not the page's cream. It is the only band on the site
+     that is, and it is what separates the form from the pitch below it. */
+  .booking {
+    padding-block: var(--sp-80);
+    background-color: var(--c-white);
+  }
+
+  .booking__form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-24);
+    width: min(57.625rem, 100% - var(--gutter) * 2); /* 922 */
+    margin-inline: auto;
+  }
+
+  /* One or two fields, sharing the row equally — the frame's #118:551 and
+     #118:558 are the same frame with a different number of children. */
+  .booking__row {
+    display: flex;
+    gap: var(--sp-32);
+  }
+
+  /* Figma #123:155: 16 between the consent and the button, and the consent
+     block carries a further 16 below itself (#258:244). */
+  .booking__foot {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--sp-32);
+  }
+
+  @media (max-width: 768px) {
+    .booking__row {
+      flex-direction: column;
+      gap: var(--sp-24);
+    }
+  }
+</style>

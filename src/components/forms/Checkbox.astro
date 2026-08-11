@@ -1,0 +1,109 @@
+---
+/**
+ * Consent checkbox — Figma `#258:244`.
+ *
+ *   box    18x18, white, 1px ink, radius 2, with 6 of lead-in above it so it
+ *          sits on the first line of a paragraph rather than its middle
+ *   text   14 / 400, #6E6E68
+ *
+ * The copy is a slot, because it carries links and cannot be a string prop.
+ */
+interface Props {
+  name: string;
+  required?: boolean;
+}
+
+const { name, required = false } = Astro.props;
+const id = `check-${name}`;
+---
+
+<div class="check">
+  <input class="check__input" id={id} name={name} type="checkbox" required={required} />
+  <label class="check__label" for={id}>
+    <span class="check__box" aria-hidden="true"></span>
+    <span class="check__text"><slot /></span>
+  </label>
+</div>
+
+<style>
+  .check {
+    position: relative;
+  }
+
+  .check__input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .check__label {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--sp-8);
+    cursor: pointer;
+  }
+
+  .check__box {
+    position: relative;
+    flex: none;
+    width: 18px;
+    height: 18px;
+    /* The frame's 6 of top padding: the box aligns to the cap height of the
+       first line, not to the line box. */
+    margin-top: 0.375rem;
+    border: 1px solid var(--c-ink);
+    border-radius: var(--r-xs); /* 2 */
+    background-color: var(--c-white);
+    transition: background-color var(--dur-fast) var(--ease-out);
+  }
+
+  /* Drawn rather than a glyph, so it inherits the box's size and scales with
+     it. Stroked in cream because the box fills with ink when checked. */
+  .check__box::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 5.5px;
+    width: 5px;
+    height: 9px;
+    border: solid var(--c-cream);
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg) scale(0);
+    transform-origin: center;
+    transition: transform var(--dur-fast) var(--ease-out);
+  }
+
+  .check__input:checked + .check__label .check__box {
+    background-color: var(--c-ink);
+  }
+
+  .check__input:checked + .check__label .check__box::after {
+    transform: rotate(45deg) scale(1);
+  }
+
+  .check__input:focus-visible + .check__label .check__box {
+    outline: 2px solid var(--c-ink);
+    outline-offset: 2px;
+  }
+
+  .check__text {
+    font-size: var(--fs-small); /* 14 */
+    line-height: var(--lh-body);
+    color: var(--c-muted);
+  }
+
+  .check__text :global(a) {
+    color: var(--c-ink);
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .check__box,
+    .check__box::after {
+      transition: none;
+    }
+  }
+</style>

@@ -103,6 +103,28 @@ export const forms = {
 } as const;
 
 /**
+ * Demo drive booking options — the two radio groups on /test-drive.
+ *
+ * Both lists are the Figma's own (#118:570, #120:167) and both are demo
+ * content you are meant to replace. The times especially: the frame's are
+ * random clock readings rather than appointment slots, and shipping
+ * "02:34 am" as a bookable test drive would be a bug in your storefront, not
+ * a design decision. Nothing constrains the length of either list — the
+ * groups lay out whatever you give them, in two columns.
+ */
+export const testDrive = {
+  locations: [
+    '4517 Washington Ave. Manchester, Kentucky 39495',
+    '2715 Ash Dr. San Jose, South Dakota 83475',
+    '6391 Elgin St. Celina, Delaware 10299',
+    '1901 Thornridge Cir. Shiloh, Hawaii 81063',
+    '2118 Thornridge Cir. Syracuse, Connecticut 35624',
+    '8502 Preston Rd. Inglewood, Maine 98380',
+  ],
+  times: ['07:59 pm', '11:23 pm', '12:23 pm', '04:15 am', '02:34 am', '05:36 pm'],
+} as const;
+
+/**
  * Posts per page on /blog.
  *
  * The Figma listing draws six rows (#237:866) and four page numbers, so the

@@ -1,0 +1,171 @@
+---
+import Icon from '../common/Icon.astro';
+
+/**
+ * Labelled text input — Figma component set `118:254` ("Text input").
+ *
+ *   label  16 / 500, ink, 8 above the field
+ *   field  padding 12, white, 0.5px #6E6E68, radius 12 → 48 tall
+ *
+ * The frame labels every field but the date in Medium 500 and that one in
+ * Regular 400 (#120:161). Treated as a slip: one weight for one row of
+ * fields.
+ *
+ * `type="date"` is the native control rather than a custom calendar. It comes
+ * with the OS picker on a phone, keyboard entry, locale-correct formatting and
+ * validation for nothing, and no library can match that. The frame's calendar
+ * glyph is painted onto WebKit's own picker button so the native click target
+ * is kept intact — Firefox draws no indicator at all and simply shows the
+ * field, which is a fair degradation.
+ */
+interface Props {
+  label: string;
+  name: string;
+  type?: 'text' | 'email' | 'tel' | 'date';
+  required?: boolean;
+  autocomplete?: string;
+  inputmode?: 'text' | 'email' | 'tel' | 'numeric';
+  pattern?: string;
+  /** Earliest date the picker will accept. Ignored unless `type="date"`. */
+  min?: string;
+}
+
+const {
+  label,
+  name,
+  type = 'text',
+  required = false,
+  autocomplete,
+  inputmode,
+  pattern,
+  min,
+} = Astro.props;
+
+const id = `field-${name}`;
+---
+
+<div class="field">
+  {/* No asterisk. The newsletter's frame marks its fields and this one does
+      not, and with every field on the form required, marking each of them is
+      noise. `required` still reaches assistive tech, and 6.3's inline
+      validation is what tells a sighted visitor. */}
+  <label class="field__label" for={id}>{label}</label>
+
+  <div class="field__box">
+    <input
+      class="field__input"
+      id={id}
+      name={name}
+      type={type}
+      required={required}
+      autocomplete={autocomplete}
+      inputmode={inputmode}
+      pattern={pattern}
+      min={min}
+    />
+    {/* Sized and placed to sit under WebKit's picker button, which is
+        transparent and keeps the click. Hidden from anything that would read
+        it, since the input already has a label. */}
+    {type === 'date' && (
+      <span class="field__icon" aria-hidden="true"><Icon name="calendar" size={24} /></span>
+    )}
+  </div>
+</div>
+
+<style>
+  .field {
+    display: flex;
+    flex: 1 1 0;
+    flex-direction: column;
+    gap: var(--sp-8);
+    min-width: 0;
+  }
+
+  .field__label {
+    font-size: var(--fs-body); /* 16 */
+    font-weight: var(--fw-medium);
+    line-height: var(--lh-body);
+    color: var(--c-ink);
+  }
+
+  .field__box {
+    position: relative;
+  }
+
+  .field__input {
+    width: 100%;
+    /* The frame's uniform 12 around a 24 line is 48, but a Figma stroke sits
+       *inside* the frame while a CSS border adds to it — and Chrome rounds
+       the 0.5 up to a whole device pixel, so an auto height came out 50.
+       Stating the 48 and letting the input centre its own text is exact under
+       `border-box` however the hairline lands. */
+    height: 3rem; /* 48 */
+    padding-inline: var(--sp-12);
+    border: 0.5px solid var(--c-muted);
+    border-radius: var(--r-lg); /* 12 */
+    background-color: var(--c-white);
+    font: inherit;
+    font-size: var(--fs-body);
+    line-height: var(--lh-body);
+    color: var(--c-ink);
+    transition:
+      border-color var(--dur-fast) var(--ease-out),
+      box-shadow var(--dur-fast) var(--ease-out);
+  }
+
+  /* 0.5px is a hairline the eye loses at rest and completely loses on focus,
+     so focus doubles it rather than only darkening it. */
+  .field__input:focus-visible {
+    outline: none;
+    border-color: var(--c-ink);
+    box-shadow: 0 0 0 1px var(--c-ink);
+  }
+
+  .field__input:hover:not(:focus-visible) {
+    border-color: var(--c-ink);
+  }
+
+  /* ---------- Date ---------- */
+
+  /* The frame right-aligns a 24px calendar in a 48 tall field with 16 of side
+     padding (#123:160). */
+  .field__icon {
+    position: absolute;
+    top: 50%;
+    right: var(--sp-16);
+    display: block;
+    color: var(--c-muted);
+    pointer-events: none;
+    transform: translateY(-50%);
+  }
+
+  .field__input[type='date'] {
+    padding-right: 3.25rem;
+  }
+
+  /* WebKit's own button, made transparent and stretched over the glyph, so
+     the picker still opens from a real click target and no script is needed.
+     Firefox has no equivalent pseudo-element and ignores all of this. */
+  .field__input[type='date']::-webkit-calendar-picker-indicator {
+    position: absolute;
+    right: 0;
+    width: 3.25rem;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  /* Safari lays the parts of a date field out as inline blocks that ignore
+     the field's own line-height, which leaves the text riding high. */
+  .field__input[type='date']::-webkit-datetime-edit {
+    line-height: var(--lh-body);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .field__input {
+      transition: none;
+    }
+  }
+</style>
