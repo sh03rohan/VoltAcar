@@ -16,7 +16,14 @@
      but it measures 5.13:1 on cream and only 3.63:1 on #131400 — a real
      failure for 14px copy. Lifted until it clears 4.5.                     */
   --c-muted-on-dark: #82827a; /* 4.80:1 on --c-ink                          */
-  --c-steel: #84a2ba; /* "Text Color 300" — heading highlight, card divider  */
+  --c-steel: #84a2ba; /* "Text Color 300" — card dividers and rules          */
+  /* The same role as *text*. The Figma sets heading accents in Text Color 300,
+     but it measures 2.41:1 on cream — a failure even for a 52px heading,
+     which Lighthouse's axe pass caught after a hero-only sweep had missed it.
+     Darkened until it clears 4.5:1 on cream *and* white, so it is safe at any
+     size rather than only as large text. Rules and dots keep --c-steel: those
+     are decorative and carry no contrast requirement.                       */
+  --c-steel-text: #547189; /* 4.61:1 on cream, 5.12:1 on white              */
   --c-white: #ffffff;
 
   /* In use across the pages but not in the swatch panel. */

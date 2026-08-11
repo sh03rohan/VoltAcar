@@ -236,6 +236,12 @@ Measured on a production build:
 | CSS, all of it | **10.7 KB** |
 | Site JavaScript — nav, drawer, sliders, modal, forms, pagination | **8.6 KB** |
 | GSAP + ScrollTrigger | **43.0 KB** |
+| Fonts, self-hosted — latin only unless a page needs latin-ext | **38 KB** |
+
+Lighthouse on a production build, all eight routes: **accessibility 100**,
+**best practices 100**, **SEO 100**, performance **92–100**. The 404 scores 66
+on SEO for one reason — it is `noindex`, which is correct for a 404 and which
+Lighthouse has no way to know.
 
 GSAP is four-fifths of the JavaScript on the page, and it is not optional:
 fourteen components import it, including the two pinned horizontal sliders and
@@ -279,8 +285,13 @@ Chromium-only. Neither affects the published site.
 
 Type is [Plus Jakarta Sans](https://fonts.google.com/specimen/Plus+Jakarta+Sans);
 the wordmark is [Figtree](https://fonts.google.com/specimen/Figtree). Both are
-loaded from Google Fonts and are open source. Animation uses
-[GSAP](https://gsap.com) with ScrollTrigger. The CMS is
+under the [SIL Open Font License](https://openfontlicense.org), and both are
+**self-hosted** from `public/fonts/` — the Google Fonts stylesheet measured
+865ms of render-blocking on every page, and serving them from the same origin
+removes that, the two-hop external chain, and the third-party request. They
+are variable fonts, so one file covers every weight.
+
+Animation uses [GSAP](https://gsap.com) with ScrollTrigger. The CMS is
 [Sveltia](https://github.com/sveltia/sveltia-cms).
 
 Photography and vehicle renders ship with the template for demonstration.

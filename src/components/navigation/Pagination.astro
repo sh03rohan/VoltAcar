@@ -10,8 +10,13 @@
  *                      #6E6E68 (#237:950 against #237:952 and siblings)
  *   Next     #237:961  as Prev
  *
- * Prev and Next become spans rather than links at the ends of the range: a
- * disabled control that is still a link is reachable and still navigates.
+ * Prev and Next become *disabled buttons* rather than links at the ends of the
+ * range — a control that is still a link is reachable and still navigates.
+ * They were spans with `aria-hidden` until Lighthouse's axe pass flagged them
+ * at 2.10:1: WCAG exempts inactive components from contrast, but nothing can
+ * tell that a hidden span is one. A real `disabled` button says so, is
+ * recognised as exempt, and tells a screen-reader user the boundary exists
+ * rather than hiding it from them.
  */
 interface Props {
   currentPage: number;
@@ -44,9 +49,9 @@ const pages = Array.from({ length: lastPage }, (_, i) => i + 1);
           Prev
         </a>
       ) : (
-        <span class="pager__step pager__step--off" aria-hidden="true">
+        <button class="pager__step pager__step--off" type="button" disabled>
           Prev
-        </span>
+        </button>
       )
     }
 
@@ -76,9 +81,9 @@ const pages = Array.from({ length: lastPage }, (_, i) => i + 1);
           Next
         </a>
       ) : (
-        <span class="pager__step pager__step--off" aria-hidden="true">
+        <button class="pager__step pager__step--off" type="button" disabled>
           Next
-        </span>
+        </button>
       )
     }
   </div>
@@ -121,12 +126,18 @@ const pages = Array.from({ length: lastPage }, (_, i) => i + 1);
   }
 
   /* At the ends of the range the control stays in place so the row keeps its
-     space-between geometry, but it is inert and hidden from assistive tech. */
+     space-between geometry. `disabled` already makes it inert; the opacity is
+     only the affordance. 0.55 composited to 2.10:1, which is unreadable even
+     for something you cannot use — 0.8 still reads as unavailable beside the
+     ink-bordered live one. */
   .pager__step--off {
     border-color: var(--c-steel);
+    background: none;
     color: var(--c-muted);
-    opacity: 0.55;
-    pointer-events: none;
+    opacity: 0.8;
+    font: inherit;
+    font-size: var(--fs-body);
+    font-weight: var(--fw-medium);
   }
 
   .pager__numbers {
