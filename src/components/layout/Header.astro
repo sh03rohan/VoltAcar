@@ -565,8 +565,11 @@ const isBranchCurrent = (link: (typeof navigation)[number]): boolean =>
         if (!next || !trigger.parentElement?.contains(next)) setOpen(false);
       });
 
-      menu.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape') {
+      /* Bound to the wrapper, not the menu. On the menu it only fired once
+         focus was already *inside* the list — but a keyboard user opens this
+         with Enter and is still on the trigger, where Escape did nothing. */
+      trigger.parentElement?.addEventListener('keydown', (event) => {
+        if ((event as KeyboardEvent).key === 'Escape') {
           setOpen(false);
           trigger.focus();
         }

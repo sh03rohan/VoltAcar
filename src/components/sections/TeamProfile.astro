@@ -444,6 +444,9 @@ const panelId = (i: number) => `team-profile-panel-${i}`;
     let busy = false;
     /** The card that opened the dialog, so focus and the close flight return to it. */
     let origin: HTMLElement | null = null;
+    /* The opening timeline, kept so a close arriving mid-flight can cut it
+       short rather than be ignored. */
+    let opening: gsap.core.Timeline | null = null;
 
     const reduce = () => prefersReducedMotion();
 
@@ -512,21 +515,22 @@ const panelId = (i: number) => `team-profile-panel-${i}`;
         return;
       }
 
-      const tl = gsap.timeline({
+      opening = gsap.timeline({
         defaults: { ease: 'power3.out' },
         onComplete: () => {
           busy = false;
+          opening = null;
           // Cleared so nothing inline survives to fight a later resize.
           gsap.set([photo, lead, aside].filter(Boolean), { clearProps: 'transform,opacity' });
           closeBtn?.focus();
         },
       });
 
-      tl.fromTo(scrim, { opacity: 0 }, { opacity: 1, duration: 0.42 }, 0);
+      opening.fromTo(scrim, { opacity: 0 }, { opacity: 1, duration: 0.42 }, 0);
 
       if (photo) {
         const f = from ? flight(photo, from) : null;
-        tl.fromTo(
+        opening.fromTo(
           photo,
           f ? { ...f, opacity: 1 } : { scale: 0.86, opacity: 0 },
           { x: 0, y: 0, scale: 1, opacity: 1, duration: 0.72, ease: 'power3.inOut' },
@@ -535,13 +539,22 @@ const panelId = (i: number) => `team-profile-panel-${i}`;
       }
 
       // The copy arrives from its own side, after the portrait has settled.
-      if (lead) tl.fromTo(lead, { opacity: 0, x: -36 }, { opacity: 1, x: 0, duration: 0.5 }, 0.26);
-      if (aside) tl.fromTo(aside, { opacity: 0, x: 36 }, { opacity: 1, x: 0, duration: 0.5 }, 0.32);
-      if (closeBtn) tl.fromTo(closeBtn, { opacity: 0 }, { opacity: 1, duration: 0.3 }, 0.3);
+      if (lead) opening.fromTo(lead, { opacity: 0, x: -36 }, { opacity: 1, x: 0, duration: 0.5 }, 0.26);
+      if (aside) opening.fromTo(aside, { opacity: 0, x: 36 }, { opacity: 1, x: 0, duration: 0.5 }, 0.32);
+      if (closeBtn) opening.fromTo(closeBtn, { opacity: 0 }, { opacity: 1, duration: 0.3 }, 0.3);
     }
 
     function close() {
-      if (busy || !dialog!.open) return;
+      if (!dialog!.open) return;
+      /* A close arriving mid-flight used to be dropped here — and because the
+         `cancel` handler calls preventDefault first, Escape during the opening
+         animation did nothing at all and the dialog stayed put with no native
+         fallback. Cut the opening short instead and carry on closing. */
+      if (busy) {
+        opening?.kill();
+        opening = null;
+        busy = false;
+      }
       const panel = panels[current];
 
       const finish = () => {

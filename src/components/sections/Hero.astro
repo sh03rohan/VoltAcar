@@ -137,8 +137,18 @@ const stats = [
         rgba(19, 20, 0, var(--wash-far)) var(--wash-end),
         rgba(19, 20, 0, 0) calc(var(--wash-end) + 12rem)
       ),
+      /* The MCP reports this as `circle at 57% 56%` with no radius, and CSS
+         then falls back to farthest-corner. Every other scrim on the site had
+         its true radius recovered by rendering the scrim rect alone and
+         inverting its alpha map — but this one is a *fill on the image rect*
+         (#14:86 carries both the gradient and the photograph), so there is no
+         isolated node to render.
+
+         75% / 142% is therefore a best fit found by searching against the
+         frame render, not a recovered geometry: 2.19% -> 2.02%. It is
+         entangled with the wash above it, so re-fit if that changes. */
       radial-gradient(
-        circle at 57% 56%,
+        75% 142% at 57% 56%,
         rgba(19, 20, 0, 0) 0%,
         rgba(19, 20, 0, 0.43) 29%,
         rgba(19, 20, 0, 0.83) 100%
