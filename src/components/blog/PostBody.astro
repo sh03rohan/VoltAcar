@@ -14,6 +14,25 @@
  * The frame only shows paragraphs and one 36/700 heading. The rest of the
  * markdown vocabulary is styled anyway — a template is bought to be written
  * in, and an unstyled list or blockquote is a hole in the product.
+ *
+ * ---------------------------------------------------------------------------
+ * IMAGES
+ *
+ * The frame breaks pictures out of the measure in two ways, and both are
+ * driven by how many images a markdown paragraph holds — no component, no
+ * class, no HTML in the post:
+ *
+ *   ![alt](./a.webp) ![alt](./b.webp)   two on one line  → the 1042 + 326
+ *                                         pair, breaking out to the 1400
+ *                                         container (#261:959, #263:978)
+ *
+ *   ![alt](./c.webp)                    one on its own   → the full-bleed
+ *                                         1600 x 780 band (#85:130)
+ *
+ * Markdown puts each of those in its own `<p>`, so `:has()` can tell them
+ * apart. Keeping it to markdown syntax rather than raw HTML is what preserves
+ * Astro's image pipeline — a hand-written `<img src="./x">` in a post is not
+ * resolved or optimised — and it is what a CMS can round-trip.
  */
 ---
 
@@ -23,16 +42,30 @@
 
 <style>
   .prose {
+    /* Three nested tracks, so a picture can leave the measure without leaving
+       the flow: text keeps the frame's 684, a pair reaches the 1400
+       container, and a lone image goes edge to edge. The gutter is here
+       rather than on the page, or `full` could never reach the edge. */
+    display: grid;
+    grid-template-columns:
+      [full-start] minmax(var(--gutter), 1fr)
+      [wide-start] minmax(0, calc((var(--container) - var(--measure)) / 2))
+      [text-start] min(var(--measure), 100% - var(--gutter) * 2)
+      [text-end] minmax(0, calc((var(--container) - var(--measure)) / 2))
+      [wide-end] minmax(var(--gutter), 1fr) [full-end];
     /* 684, the frame's measure. */
-    max-width: 42.75rem;
-    margin-inline: auto;
+    --measure: 42.75rem;
     font-size: var(--fs-lead); /* 20 */
     line-height: var(--lh-body);
     color: var(--c-ink);
   }
 
-  /* Flow spacing rather than a flex gap, so a figure's 80 collapses against a
-     heading's 20 instead of adding to it. */
+  .prose > :global(*) {
+    grid-column: text;
+  }
+
+  /* Grid items do not margin-collapse, so every gap is stated once by the
+     element below it rather than shared between neighbours. */
   .prose > :global(* + *) {
     margin-top: var(--sp-20);
   }
@@ -55,6 +88,56 @@
 
   .prose > :global(:first-child) {
     margin-top: 0;
+  }
+
+  /* ---------- Figures ---------- */
+
+  /* Figma #263:981: 80 clear of the copy on both sides. `:has()` outranks the
+     heading's 60 on specificity, which is what lets a picture follow a
+     heading at the section rhythm rather than the paragraph one. */
+  .prose > :global(p:has(img)),
+  .prose > :global(p:has(img) + *) {
+    margin-top: var(--sp-80);
+  }
+
+  .prose > :global(p:has(img)) {
+    grid-column: wide;
+  }
+
+  /* Figma #261:959 and #263:978 — 1042 + 32 + 326 is exactly the 1400
+     container, so the two tracks need no maths beyond their own widths. */
+  .prose > :global(p:has(img + img)) {
+    display: grid;
+    grid-template-columns: 1042fr 326fr;
+    gap: var(--sp-32);
+    aspect-ratio: 1400 / 440;
+  }
+
+  .prose > :global(p:has(img:only-child)) {
+    grid-column: full;
+    /* Figma #85:130 — the same 780 band the heroes use. */
+    aspect-ratio: 1600 / 780;
+  }
+
+  /* #263:977 leaves 86 under the full-bleed band where every other gap in the
+     section is 80. Reproduced rather than regularised: it moves everything
+     below it, and the frame is the reference. */
+  .prose > :global(p:has(img:only-child) + *) {
+    margin-top: 5.375rem; /* 86 */
+  }
+
+  /* The aspect-ratio above gives each box a definite height, which is what
+     lets these resolve — see the CTA band, where dropping it silently broke
+     the same pattern. */
+  .prose :global(p:has(img) img) {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .prose :global(p:has(img + img) img) {
+    border-radius: var(--r-sm);
   }
 
   .prose :global(ul),
@@ -113,5 +196,35 @@
     background-color: var(--c-ink);
     color: var(--c-cream);
     overflow-x: auto;
+  }
+
+  /* ---------- Responsive ---------- */
+
+  /* The narrow half of a pair is 326 of 1400 — a detail shot, and it holds
+     down to about 160px. Past that it is a thumbnail, so the pair stacks and
+     both pictures take the same landscape crop rather than one of them
+     arriving full-width and portrait. */
+  @media (max-width: 768px) {
+    .prose > :global(p:has(img + img)) {
+      grid-template-columns: 1fr;
+      gap: var(--sp-16);
+      aspect-ratio: auto;
+    }
+
+    .prose :global(p:has(img + img) img) {
+      aspect-ratio: 3 / 2;
+      height: auto;
+    }
+
+    /* 2.05:1 is a band across a desktop page and a letterbox on a phone. */
+    .prose > :global(p:has(img:only-child)) {
+      aspect-ratio: 3 / 2;
+    }
+
+    .prose > :global(p:has(img)),
+    .prose > :global(p:has(img) + *),
+    .prose > :global(p:has(img:only-child) + *) {
+      margin-top: var(--section-gap-sm);
+    }
   }
 </style>

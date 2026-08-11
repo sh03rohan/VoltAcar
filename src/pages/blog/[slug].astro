@@ -73,9 +73,10 @@ const { Content } = await render(post);
 </BaseLayout>
 
 <style>
+  /* No inline padding: PostBody's own grid owns the gutter, so that a
+     full-bleed figure can actually reach the edge of the page. */
   .post-page {
     padding-top: var(--section-gap-sm); /* 80 */
     padding-bottom: var(--section-gap); /* 180 */
-    padding-inline: var(--gutter);
   }
 </style>
