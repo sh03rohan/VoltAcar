@@ -5,6 +5,7 @@ import Footer from '../components/layout/Footer.astro';
 import PageHero from '../components/sections/PageHero.astro';
 import MissionStatement from '../components/sections/MissionStatement.astro';
 import KidsSafety from '../components/sections/KidsSafety.astro';
+import QuoteBand from '../components/sections/QuoteBand.astro';
 import Newsletter from '../components/sections/Newsletter.astro';
 import { site } from '../config/site';
 
@@ -43,6 +44,14 @@ import aboutHero from '../assets/images/about-hero.webp';
 
   {/* Figma #87:355 — heading row plus a six-photo track on ScrollTrack */}
   <KidsSafety />
+
+  {/* Figma #263:1010 — the Home band (#167:176) verbatim: same quote, same
+      attribution, same background fill. Nothing to vary, so nothing is passed
+      that Home does not also pass. */}
+  <QuoteBand
+    quote="“At VoltACar, we’re rethinking transportation by blending smart technology, sustainability, and human-centered design to make electric driving intuitive and accessible.”"
+    attribution="John Sans, Founder & CEO"
+  />
 
   {/* Figma #91:572 */}
   <Newsletter />
