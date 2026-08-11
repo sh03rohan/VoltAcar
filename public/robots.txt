@@ -1,5 +1,9 @@
 User-agent: *
 Allow: /
 
+# The CMS is a client-side app behind your git provider's auth; there is
+# nothing here for a crawler and nothing worth indexing.
+Disallow: /admin/
+
 # Update the host below to match `site` in astro.config.mjs before deploying.
 Sitemap: https://voltacar.example.com/sitemap-index.xml

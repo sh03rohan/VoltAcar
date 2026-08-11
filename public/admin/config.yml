@@ -1,0 +1,133 @@
+# Sveltia CMS — VoltACar
+#
+# Sveltia is Decap/Netlify CMS compatible, so this file follows that schema.
+# Open the editor at /admin/ once the site is deployed.
+#
+# ---------------------------------------------------------------------------
+# BEFORE YOU DEPLOY
+#
+# 1. Set `backend.repo` below to your own GitHub repository.
+# 2. Choose how editors sign in. The editor offers two routes and neither
+#    needs anything deployed alongside the site:
+#      - "Sign In Using Access Token" — paste a GitHub personal access token
+#        with repo scope. Nothing to register, nothing to host. Start here.
+#      - "Sign In with GitHub" — a proper OAuth flow, which needs a GitHub
+#        OAuth app and an auth service at `base_url`. Worth it once more than
+#        one person edits.
+#    On Netlify with Identity enabled you can instead set
+#    `backend.name: git-gateway` and drop the repo line.
+# 3. Delete `local_backend` if you do not want the local editing mode below.
+#
+# ---------------------------------------------------------------------------
+# EDITING LOCALLY, WITHOUT AUTH
+#
+#   npm run dev
+#   open http://localhost:4321/admin/  →  "Work with Local Repository"
+#
+# Sveltia asks you to pick this project's root folder and then reads and
+# writes it directly through the File System Access API. There is no proxy
+# server to run — that is the older Decap arrangement, not this one — but the
+# API is Chromium-only, so use Chrome or Edge for local editing.
+#
+# Changes land straight in your working tree. There is no commit and no push,
+# so review them with `git diff` like any other edit.
+
+backend:
+  name: github
+  repo: your-org/your-repo
+  branch: main
+
+# Reads and writes the real files on disk when the proxy above is running.
+# Ignored in production.
+local_backend: true
+
+# Fallback for anything not covered by a collection's own media folder.
+media_folder: public/images
+public_folder: /images
+
+collections:
+  - name: blog
+    label: Blog
+    label_singular: Post
+    description: Articles listed at /blog and rendered at /blog/<slug>.
+    folder: src/content/blog
+    extension: md
+    format: frontmatter
+    create: true
+    slug: '{{slug}}'
+    summary: '{{title}}'
+    sortable_fields: [publishedAt, title]
+    view_filters:
+      - label: Drafts
+        field: draft
+        pattern: true
+
+    # The crux of this whole file.
+    #
+    # `cover` is declared with Astro's `image()` helper in
+    # src/content.config.ts, which resolves the path *relative to the markdown
+    # file* and fails the build on anything it cannot find. A CMS's usual
+    # habit — upload to /public and write "/images/foo.webp" — therefore
+    # breaks `npm run build` the first time someone adds a post, and the
+    # config that caused it looks perfectly fine.
+    #
+    # A relative `media_folder` is resolved against this collection's own
+    # folder, so these two land the file in src/assets/images/blog and write
+    # exactly the "../../assets/images/blog/<file>" the schema expects.
+    media_folder: '../../assets/images/blog'
+    public_folder: '../../assets/images/blog'
+
+    fields:
+      - label: Title
+        name: title
+        widget: string
+        hint: Shown on the card, the post's H1, and the browser tab.
+
+      - label: Standfirst
+        name: description
+        widget: text
+        hint: >-
+          One or two sentences. Used on the listing card, in the post's hero,
+          and as the page's meta description.
+
+      - label: Cover image
+        name: cover
+        widget: image
+        media_library:
+          config:
+            multiple: false
+        hint: Landscape. 1130px wide or more — the card renders it at 565.
+
+      - label: Cover alt text
+        name: coverAlt
+        widget: string
+        required: false
+        default: ''
+        hint: >-
+          Leave empty if the picture only repeats what the title already says
+          — that is the honest choice for a decorative cover.
+
+      - label: Published
+        name: publishedAt
+        widget: datetime
+        date_format: 'YYYY-MM-DD'
+        time_format: false
+        picker_utc: true
+        hint: >-
+          Orders the listing, newest first. Not displayed anywhere — the
+          design carries no dates.
+
+      - label: Draft
+        name: draft
+        widget: boolean
+        required: false
+        default: false
+        hint: Drafts are left out of the listing and out of the build.
+
+      - label: Body
+        name: body
+        widget: markdown
+        hint: >-
+          Two images on one line become the wide 1042 + 326 pair; one image
+          alone becomes the full-bleed band. Anything else keeps the article
+          measure.
