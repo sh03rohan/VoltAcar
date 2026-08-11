@@ -18,6 +18,8 @@ import type { ImageMetadata } from 'astro';
  * falls back to a `cover` fit once it no longer does.
  */
 interface Props {
+  /** Small label above the heading, 8px clear of it — Blog (#237:843). */
+  eyebrow?: string;
   /** Leading run of the heading. */
   title: string;
   /** Lime-highlighted run, rendered between `title` and `titleTrail`. */
@@ -46,6 +48,7 @@ interface Props {
 }
 
 const {
+  eyebrow,
   title,
   titleAccent,
   titleTrail,
@@ -99,11 +102,22 @@ const vars = {
 
   <div class="page-hero__inner">
     <div class="page-hero__copy">
-      <h1 class="page-hero__title" data-page-hero-title>
-        {title}{titleAccent && <span class="page-hero__accent">{titleAccent}</span>}{titleTrail}
-      </h1>
+      {/* Grouped so the eyebrow sits 8 from the heading while the block below
+          keeps the copy column's own 24. */}
+      <div class="page-hero__head">
+        {eyebrow && <p class="page-hero__eyebrow" data-page-hero-lead>{eyebrow}</p>}
+        <h1 class="page-hero__title" data-page-hero-title>
+          {title}{titleAccent && <span class="page-hero__accent">{titleAccent}</span>}{titleTrail}
+        </h1>
+      </div>
       {body && <p class="page-hero__lead" data-page-hero-lead>{body}</p>}
-      <slot />
+      {
+        Astro.slots.has('default') && (
+          <div class="page-hero__actions" data-page-hero-lead>
+            <slot />
+          </div>
+        )
+      }
     </div>
   </div>
 </section>
@@ -159,6 +173,23 @@ const vars = {
     align-items: flex-start;
     gap: var(--sp-24);
     max-width: var(--copyWidth);
+  }
+
+  .page-hero__head {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-8);
+  }
+
+  .page-hero__eyebrow {
+    font-size: var(--fs-lead); /* 20 */
+    line-height: var(--lh-body);
+  }
+
+  /* Figma #237:841: 48 below the copy block, which is the column's own 24
+     plus this. */
+  .page-hero__actions {
+    margin-top: var(--sp-24);
   }
 
   .page-hero__title {
@@ -224,6 +255,12 @@ const vars = {
       /* Overrides the desktop overhang, which would re-inflate the box. */
       min-height: 0;
       aspect-ratio: 4 / 3;
+      /* 4:3 is right at phone widths but runs away as the viewport grows — at
+         768 it made the strip 576 of a 702 band, so the copy had nowhere to
+         sit that was not over the photograph. Capping it against the band
+         keeps the balance and, because the box gets shorter rather than
+         narrower, shows more of the render rather than less. */
+      max-height: 55%;
       object-position: var(--imgFocusNarrow);
       /* Reaches full strength only at 42%, which is where the car's body
          starts. The band above it is sky and roof — the brightest part of
@@ -262,7 +299,9 @@ const vars = {
 
   if (hero && !prefersReducedMotion()) {
     const title = hero.querySelector('[data-page-hero-title]');
-    const lead = hero.querySelector('[data-page-hero-lead]');
+    // Eyebrow, lead and any CTA all settle together, so this is a list — a
+    // single lookup would only ever animate whichever came first.
+    const lead = hero.querySelectorAll('[data-page-hero-lead]');
     const image = hero.querySelector<HTMLElement>('[data-page-hero-image]');
 
     const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
@@ -280,8 +319,13 @@ const vars = {
       tl.fromTo(image, { scale: 1.08 }, { scale: 1, duration: 1.6, ease: 'power2.out' }, 0);
     }
 
-    if (lead) {
-      tl.fromTo(lead, { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.7 }, 0.35);
+    if (lead.length) {
+      tl.fromTo(
+        lead,
+        { opacity: 0, y: 24 },
+        { opacity: 1, y: 0, duration: 0.7, stagger: 0.08 },
+        0.35,
+      );
     }
 
     if (image) {
