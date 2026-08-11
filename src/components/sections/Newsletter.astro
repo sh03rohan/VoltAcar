@@ -304,45 +304,7 @@ const action = forms.newsletter || undefined;
 
 <script>
   import { revealOnScroll, gsap, prefersReducedMotion } from '../../scripts/motion';
-
-  const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-  /** Deliberately loose — postal codes are alphanumeric in much of the world. */
-  const ZIP = /^[A-Za-z0-9][A-Za-z0-9 -]{2,11}$/;
-
-  interface Rule {
-    test: (value: string) => boolean;
-    empty: string;
-    invalid: string;
-  }
-
-  const rules: Record<string, Rule> = {
-    email: {
-      test: (v) => EMAIL.test(v),
-      empty: 'Enter your email address.',
-      invalid: 'Enter a valid email address.',
-    },
-    zip: {
-      test: (v) => ZIP.test(v),
-      empty: 'Enter your zip code.',
-      invalid: 'Enter a valid zip code.',
-    },
-  };
-
-  function messageFor(input: HTMLInputElement): string {
-    const rule = rules[input.name];
-    if (!rule) return '';
-    const value = input.value.trim();
-    if (value === '') return rule.empty;
-    return rule.test(value) ? '' : rule.invalid;
-  }
-
-  function setFieldMessage(input: HTMLInputElement, message: string): void {
-    const id = input.getAttribute('aria-describedby');
-    const target = id ? document.getElementById(id) : null;
-    if (target) target.textContent = message;
-    if (message) input.setAttribute('aria-invalid', 'true');
-    else input.removeAttribute('aria-invalid');
-  }
+  import { wireForm, text, EMAIL, ZIP } from '../../scripts/form';
 
   document.querySelectorAll<HTMLElement>('[data-newsletter]').forEach((section) => {
     revealOnScroll(section);
@@ -372,77 +334,31 @@ const action = forms.newsletter || undefined;
     const form = section.querySelector<HTMLFormElement>('[data-newsletter-form]');
     if (!form) return;
 
-    const inputs = Array.from(form.querySelectorAll<HTMLInputElement>('.field__input'));
-    const status = form.querySelector<HTMLElement>('[data-newsletter-status]');
-    const submit = form.querySelector<HTMLButtonElement>('button[type="submit"]');
-
-    /* Only now that the script is running do we take validation off the
-       browser — without JS the native messages are the better fallback. */
-    form.noValidate = true;
-
-    const setStatus = (message: string, state?: 'error'): void => {
-      if (!status) return;
-      status.textContent = message;
-      if (state) status.dataset.state = state;
-      else delete status.dataset.state;
+    const input = (name: string) => form.querySelector<HTMLInputElement>(`[name="${name}"]`);
+    const msgFor = (el: Element | null) => {
+      const id = el?.getAttribute('aria-describedby');
+      return id ? document.getElementById(id) : null;
     };
 
-    /**
-     * Errors are raised on submit and cleared on input — deliberately never on
-     * blur. Raising one on blur inserts a message between mousedown and
-     * mouseup, which moves the submit button out from under the pointer and
-     * swallows the very click that triggered the blur.
-     */
-    inputs.forEach((input) => {
-      input.addEventListener('input', () => {
-        if (input.hasAttribute('aria-invalid') && messageFor(input) === '') {
-          setFieldMessage(input, '');
-        }
-      });
-    });
-
-    form.addEventListener('submit', async (event) => {
-      event.preventDefault();
-      setStatus('');
-
-      let firstInvalid: HTMLInputElement | null = null;
-      inputs.forEach((input) => {
-        const message = messageFor(input);
-        setFieldMessage(input, message);
-        if (message && !firstInvalid) firstInvalid = input;
-      });
-
-      if (firstInvalid) {
-        (firstInvalid as HTMLInputElement).focus();
-        return;
-      }
-
-      const succeed = (): void => {
-        form.reset();
-        inputs.forEach((input) => setFieldMessage(input, ''));
-        setStatus('Thanks for subscribing — check your inbox to confirm.');
-      };
-
-      // No endpoint configured: validate, confirm, send nothing.
-      if (form.dataset.hasEndpoint !== 'true') {
-        succeed();
-        return;
-      }
-
-      if (submit) submit.disabled = true;
-      try {
-        const response = await fetch(form.action, {
-          method: 'POST',
-          headers: { Accept: 'application/json' },
-          body: new FormData(form),
-        });
-        if (!response.ok) throw new Error(String(response.status));
-        succeed();
-      } catch {
-        setStatus('Something went wrong. Please try again.', 'error');
-      } finally {
-        if (submit) submit.disabled = false;
-      }
+    wireForm(form, {
+      fields: [
+        text(
+          input('email'),
+          msgFor(input('email')),
+          'Enter your email address.',
+          EMAIL,
+          'Enter a valid email address.',
+        ),
+        text(
+          input('zip'),
+          msgFor(input('zip')),
+          'Enter your zip code.',
+          ZIP,
+          'Enter a valid zip code.',
+        ),
+      ].filter((f) => f !== null),
+      status: form.querySelector<HTMLElement>('[data-newsletter-status]'),
+      success: 'Thanks for subscribing — check your inbox to confirm.',
     });
   });
 </script>

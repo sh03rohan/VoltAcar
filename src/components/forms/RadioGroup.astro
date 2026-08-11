@@ -38,7 +38,12 @@ const legendId = `legend-${name}`;
     ignores its padding — measured at offsetTop 0 against a stated 16 — so the
     group's top space would silently vanish. `aria-labelledby` names the
     fieldset just as well and leaves the label an ordinary block. */}
-<fieldset class="radios" aria-labelledby={legendId} data-radio-group>
+<fieldset
+  class="radios"
+  aria-labelledby={legendId}
+  aria-describedby={`${legendId}-msg`}
+  data-radio-group
+>
   <p class="radios__legend" id={legendId}>{legend}</p>
 
   <div class:list={['radios__grid', tight && 'radios__grid--tight']} style={`--rows:${rows}`}>
@@ -59,6 +64,8 @@ const legendId = `legend-${name}`;
       ))
     }
   </div>
+
+  <p class="radios__msg" id={`${legendId}-msg`}></p>
 </fieldset>
 
 <style>
@@ -164,6 +171,22 @@ const legendId = `legend-${name}`;
 
   .radio:hover .radio__input:not(:checked) + .radio__control {
     border-color: var(--c-ink);
+  }
+
+  /* The group's message, not each option's — one missing choice, one line. */
+  .radios__msg {
+    font-size: var(--fs-small);
+    line-height: var(--lh-body);
+    color: var(--c-error-strong);
+  }
+
+  .radios__msg:empty {
+    display: none;
+  }
+
+  /* The whole group is what is invalid, so the whole group is what marks it. */
+  .radios:has(.radio__input[aria-invalid='true']) .radio__control {
+    border-color: var(--c-error-strong);
   }
 
   .radio__label {

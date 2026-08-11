@@ -13,8 +13,11 @@ import { site, forms, testDrive } from '../config/site';
 import driveHero from '../assets/images/test-drive-hero.webp';
 
 /* Same contract as the newsletter: an empty endpoint still validates and still
-   shows its success state, it just never sends. Leaving `action` off entirely
-   rather than empty keeps a no-JS submit from reloading the page. */
+   shows its success state, it just never sends — which is what lets a buyer
+   style and test the form before wiring anything up.
+   With JS the submit is intercepted either way. Without it, and with no
+   endpoint set, there is nowhere to post and the browser falls back to its own
+   validation; `required` is left on every control for exactly that case. */
 const action = forms.testDrive || undefined;
 
 /* Nobody books a demo drive for yesterday. */
@@ -52,7 +55,13 @@ const today = new Date().toISOString().slice(0, 10);
   <section class="booking" aria-labelledby="booking-title">
     <h2 class="visually-hidden" id="booking-title">Book a demo drive</h2>
 
-    <form class="booking__form" method="post" action={action} novalidate data-booking-form>
+    <form
+      class="booking__form"
+      method="post"
+      action={action}
+      data-has-endpoint={action ? 'true' : 'false'}
+      data-booking-form
+    >
       <div class="booking__row">
         <TextField label="First name" name="firstName" autocomplete="given-name" required />
         <TextField label="Last name" name="lastName" autocomplete="family-name" required />
@@ -114,6 +123,8 @@ const today = new Date().toISOString().slice(0, 10);
         </Checkbox>
 
         <Button label="Book Now" type="submit" variant="dark" size="sm" />
+
+        <p class="booking__status" data-booking-status role="status"></p>
       </div>
     </form>
   </section>
@@ -157,6 +168,25 @@ const today = new Date().toISOString().slice(0, 10);
     gap: var(--sp-32);
   }
 
+  /* The lime that carries a success everywhere else on the site is 1.05:1 on
+     white, so the confirmation is set in ink and the error keeps its own red.
+     Both are announced by role="status" regardless. */
+  .booking__status {
+    font-size: var(--fs-body);
+    font-weight: var(--fw-medium);
+    line-height: var(--lh-body);
+    color: var(--c-ink);
+  }
+
+  .booking__status[data-state='error'] {
+    color: var(--c-error-strong);
+  }
+
+  .booking__status:empty {
+    display: none;
+  }
+
+
   @media (max-width: 768px) {
     .booking__row {
       flex-direction: column;
@@ -164,3 +194,67 @@ const today = new Date().toISOString().slice(0, 10);
     }
   }
 </style>
+
+<script>
+  import { wireForm, text, choice, consent, futureDate, EMAIL, ZIP, PHONE } from '../scripts/form';
+
+  const form = document.querySelector<HTMLFormElement>('[data-booking-form]');
+
+  if (form) {
+    const input = (name: string) => form.querySelector<HTMLInputElement>(`[name="${name}"]`);
+    const group = (name: string) =>
+      Array.from(form.querySelectorAll<HTMLInputElement>(`[name="${name}"]`));
+    /* Every control was given `aria-describedby` by its component, so the
+       message element is found the same way for all of them. */
+    const msgFor = (el: Element | null) => {
+      const id = el?.getAttribute('aria-describedby');
+      return id ? document.getElementById(id) : null;
+    };
+    const fieldMsg = (name: string) => msgFor(input(name));
+
+    wireForm(form, {
+      fields: [
+        text(input('firstName'), fieldMsg('firstName'), 'Enter your first name.'),
+        text(input('lastName'), fieldMsg('lastName'), 'Enter your last name.'),
+        text(
+          input('email'),
+          fieldMsg('email'),
+          'Enter your email address.',
+          EMAIL,
+          'Enter a valid email address.',
+        ),
+        text(
+          input('phone'),
+          fieldMsg('phone'),
+          'Enter your phone number.',
+          PHONE,
+          'Enter a valid phone number.',
+        ),
+        text(input('zip'), fieldMsg('zip'), 'Enter your zip code.', ZIP, 'Enter a valid zip code.'),
+        choice(
+          group('location'),
+          msgFor(form.querySelector('[data-radio-group]')),
+          'Choose a location.',
+        ),
+        futureDate(
+          input('date'),
+          fieldMsg('date'),
+          'Choose a date for your drive.',
+          'Choose a date that has not already passed.',
+        ),
+        choice(
+          group('time'),
+          msgFor(form.querySelectorAll('[data-radio-group]')[1] ?? null),
+          'Choose a time.',
+        ),
+        consent(
+          input('consent'),
+          fieldMsg('consent'),
+          'Please agree to the terms before booking.',
+        ),
+      ].filter((f) => f !== null),
+      status: form.querySelector<HTMLElement>('[data-booking-status]'),
+      success: 'Thanks — your demo drive is booked. We’ll be in touch to confirm.',
+    });
+  }
+</script>

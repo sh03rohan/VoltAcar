@@ -62,6 +62,7 @@ const id = `field-${name}`;
       inputmode={inputmode}
       pattern={pattern}
       min={min}
+      aria-describedby={`${id}-msg`}
     />
     {/* Sized and placed to sit under WebKit's picker button, which is
         transparent and keeps the click. Hidden from anything that would read
@@ -70,6 +71,10 @@ const id = `field-${name}`;
       <span class="field__icon" aria-hidden="true"><Icon name="calendar" size={24} /></span>
     )}
   </div>
+
+  {/* Written by the form engine on submit. Empty and collapsed until then, so
+      no space is reserved and nothing below it moves twice. */}
+  <p class="field__msg" id={`${id}-msg`}></p>
 </div>
 
 <style>
@@ -123,6 +128,24 @@ const id = `field-${name}`;
 
   .field__input:hover:not(:focus-visible) {
     border-color: var(--c-ink);
+  }
+
+  /* A hairline in a slightly different colour is not a state anyone notices,
+     so an invalid field doubles its own border too. */
+  .field__input[aria-invalid='true'] {
+    border-color: var(--c-error-strong);
+    box-shadow: 0 0 0 1px var(--c-error-strong);
+  }
+
+  .field__msg {
+    margin-top: var(--sp-8);
+    font-size: var(--fs-small);
+    line-height: var(--lh-body);
+    color: var(--c-error-strong);
+  }
+
+  .field__msg:empty {
+    display: none;
   }
 
   /* ---------- Date ---------- */

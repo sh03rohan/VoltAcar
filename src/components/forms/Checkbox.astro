@@ -18,11 +18,20 @@ const id = `check-${name}`;
 ---
 
 <div class="check">
-  <input class="check__input" id={id} name={name} type="checkbox" required={required} />
+  <input
+    class="check__input"
+    id={id}
+    name={name}
+    type="checkbox"
+    required={required}
+    aria-describedby={`${id}-msg`}
+  />
   <label class="check__label" for={id}>
     <span class="check__box" aria-hidden="true"></span>
     <span class="check__text"><slot /></span>
   </label>
+
+  <p class="check__msg" id={`${id}-msg`}></p>
 </div>
 
 <style>
@@ -92,6 +101,25 @@ const id = `check-${name}`;
     font-size: var(--fs-small); /* 14 */
     line-height: var(--lh-body);
     color: var(--c-muted);
+  }
+
+  .check__input[aria-invalid='true'] + .check__label .check__box {
+    border-color: var(--c-error-strong);
+    box-shadow: 0 0 0 1px var(--c-error-strong);
+  }
+
+  .check__msg {
+    /* Clears the box and its gap, so the message lines up with the copy it
+       belongs to rather than with the control. */
+    margin-top: var(--sp-8);
+    margin-left: 1.625rem; /* 18 + 8 */
+    font-size: var(--fs-small);
+    line-height: var(--lh-body);
+    color: var(--c-error-strong);
+  }
+
+  .check__msg:empty {
+    display: none;
   }
 
   .check__text :global(a) {
