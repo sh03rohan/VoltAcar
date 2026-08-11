@@ -105,9 +105,10 @@ export const forms = {
 /**
  * Posts per page on /blog.
  *
- * 6 is what the Figma listing shows (#237:866). That frame also draws four
- * page numbers, so the design assumes rather more than six posts exist — with
- * only the six that ship here there is a single page and the pager hides
- * itself. Lower this to see it working, or raise it once you have more.
+ * The Figma listing draws six rows (#237:866) and four page numbers, so the
+ * design assumes rather more than the six posts that ship here. Set to 5 so
+ * the pager it also draws (#237:946) is actually reachable with the demo
+ * content: six posts become two pages. Raise it to 6 to match the frame's
+ * first page exactly, at the cost of hiding the pager until you add a seventh.
  */
-export const postsPerPage = 6;
+export const postsPerPage = 5;

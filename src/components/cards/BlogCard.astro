@@ -135,6 +135,44 @@ const { title, description, href, cover, coverAlt = '', eager = false } = Astro.
     text-decoration: none;
   }
 
+  /* Hover sweeps a colour across the title rather than underlining it.
+     The gradient is two flat halves on a box twice the text's width, so
+     sliding its position wipes the new colour in from the left — the same
+     motion a GSAP tween of `backgroundPosition` produces, but without a
+     listener per card, and it still runs if the JS never arrives.
+
+     `inline` with a cloned box decoration gives each line its own gradient
+     box sized to that line, so both lines fill across their own width
+     together instead of sharing one 600px sweep the shorter line finishes
+     early.
+
+     Guarded, because the technique needs transparent text: without the
+     support the title would simply be invisible. */
+  @supports (background-clip: text) or (-webkit-background-clip: text) {
+    .post__link {
+      display: inline;
+      -webkit-box-decoration-break: clone;
+      box-decoration-break: clone;
+      background-image: linear-gradient(
+        to right,
+        var(--c-muted) 50%,
+        var(--c-ink) 50%
+      );
+      background-size: 200% 100%;
+      background-position: 100% 0;
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      -webkit-text-fill-color: transparent;
+      transition: background-position 0.55s cubic-bezier(0.33, 1, 0.68, 1);
+    }
+
+    .post:hover .post__link,
+    .post__link:focus-visible {
+      background-position: 0 0;
+    }
+  }
+
   /* Carries the click for the whole row, so the pill and the render are both
      live without being separate tab stops. */
   .post__link::after {
@@ -186,16 +224,6 @@ const { title, description, href, cover, coverAlt = '', eager = false } = Astro.
     .post:hover .post__more-icon {
       transform: translateX(3px);
     }
-
-    .post:hover .post__link {
-      text-decoration: underline;
-      text-underline-offset: 4px;
-    }
-  }
-
-  .post__link:focus-visible {
-    text-decoration: underline;
-    text-underline-offset: 4px;
   }
 
   /* ---------- Responsive ---------- */
@@ -234,7 +262,8 @@ const { title, description, href, cover, coverAlt = '', eager = false } = Astro.
 
   @media (prefers-reduced-motion: reduce) {
     .post__image,
-    .post__more-icon {
+    .post__more-icon,
+    .post__link {
       transition: none;
     }
 
