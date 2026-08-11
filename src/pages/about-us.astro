@@ -3,6 +3,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import Header from '../components/layout/Header.astro';
 import Footer from '../components/layout/Footer.astro';
 import PageHero from '../components/sections/PageHero.astro';
+import MissionStatement from '../components/sections/MissionStatement.astro';
 import Newsletter from '../components/sections/Newsletter.astro';
 import { site } from '../config/site';
 
@@ -32,6 +33,12 @@ import aboutHero from '../assets/images/about-hero.webp';
     copyWidth={656}
     bodyWidth={565}
   />
+
+  {/* Figma #87:324 — the same 1162px statement as Features (#126:295), word
+      for word. Unlike Features it sits straight on the page cream: the frame
+      has no white band here, which the render confirms all the way down to
+      the team section. */}
+  <MissionStatement statement="We are shaping the next generation of electric mobility — crafted for modern cities, everyday lives, and a cleaner future. Our mission is simple: make electric driving accessible, efficient, and human-centered, from compact designs to advanced technology." />
 
   {/* Figma #91:572 */}
   <Newsletter />
