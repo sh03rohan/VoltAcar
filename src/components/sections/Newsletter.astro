@@ -231,9 +231,11 @@ const action = forms.newsletter || undefined;
     display: none;
   }
 
+  /* The one place --c-muted lands on ink rather than cream; every other use
+     in the project sits on cream or white and is fine as it is. */
   .newsletter__consent {
     font-size: var(--fs-small);
-    color: var(--c-muted);
+    color: var(--c-muted-on-dark);
   }
 
   .newsletter__consent strong {

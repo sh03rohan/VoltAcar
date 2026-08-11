@@ -59,13 +59,6 @@ interface Props {
    */
   copyTop?: number;
   /**
-   * Adds a left-to-right wash at every width, not just where the band crops.
-   * For renders whose own composition puts bright ground under the copy — the
-   * privacy hero's sunlit valley measures 3.83:1 on the lead and 2.23:1 on the
-   * title without it. The frame has the same problem; it is not a build error.
-   */
-  copyWash?: boolean;
-  /**
    * Where the lead sits under the heading. The blog single (#83:527) drops it
    * clear of the heading and hangs it off the copy block's right edge instead
    * of its left — the frame places it at x=457 with a 687 measure, and
@@ -93,7 +86,6 @@ const {
   bodyWidth = 803,
   titleWidth = copyWidth,
   copyTop = 265,
-  copyWash = false,
   leadAlign = 'start',
 } = Astro.props;
 
@@ -136,7 +128,7 @@ const vars = {
       fetchpriority="high"
       data-page-hero-image
     />
-    <div class:list={['page-hero__scrim', copyWash && 'page-hero__scrim--wash']}></div>
+    <div class="page-hero__scrim"></div>
   </div>
 
   <div class="page-hero__inner">
@@ -204,30 +196,48 @@ const vars = {
     object-position: var(--imgFocus);
   }
 
+  /* The frame's radial scrim alone is not enough on any of these renders. A
+     sweep of every hero at six widths failed 18 times — worst 2.07:1 on the
+     Features heading — because the radial is centred on the *render's*
+     subject, not on the copy, and the copy's share of the band grows as the
+     viewport narrows.
+
+     So a directional wash rides on top at every width, anchored to where the
+     copy actually ends rather than to a share of the band: stated against
+     `--gutter + --copyWidth`, the release tracks the text instead of drifting
+     across it, and the render keeps its own light beyond that point. */
   .page-hero__scrim {
+    --wash-end: calc(var(--gutter) + var(--copyWidth));
+    /* Graded by width on purpose. At 1600 the frame's own composition nearly
+       works — only the Features lead fell short, at 4.23:1 — so the wash there
+       is the lightest thing that clears the floor, and the band still reads as
+       designed. Below 1400 the render is scaled up to cover and the bright
+       bodywork drifts in under the copy, which is where the real failures
+       were; the veil doubles to meet them. Running the heavy value everywhere
+       cost 5.96% against the Features frame for no accessibility gain. */
+    --wash-near: 0.34;
+    --wash-mid: 0.28;
+    --wash-far: 0.16;
+
     position: absolute;
     inset: 0;
-    background: var(--scrim);
-  }
-
-  /* Anchored to where the copy actually ends rather than to a share of the
-     band. Percentages looked right at 1600 and failed at 1280 (lead 4.02:1),
-     because the copy's share of the band grows as the viewport narrows while
-     the stops stay put. Stated against `--gutter + --copyWidth`, the release
-     tracks the text at every width and the render keeps its own light beyond
-     it. */
-  .page-hero__scrim--wash {
-    --wash-end: calc(var(--gutter) + var(--copyWidth));
-
     background:
       linear-gradient(
         to right,
-        rgba(19, 20, 0, 0.62) 0,
-        rgba(19, 20, 0, 0.56) calc(var(--gutter) + var(--copyWidth) * 0.8),
-        rgba(19, 20, 0, 0.44) var(--wash-end),
+        rgba(19, 20, 0, var(--wash-near)) 0,
+        rgba(19, 20, 0, var(--wash-mid)) calc(var(--gutter) + var(--copyWidth) * 0.8),
+        rgba(19, 20, 0, var(--wash-far)) var(--wash-end),
         rgba(19, 20, 0, 0) calc(var(--wash-end) + 12rem)
       ),
       var(--scrim);
+  }
+
+  @media (max-width: 1400px) {
+    .page-hero__scrim {
+      --wash-near: 0.72;
+      --wash-mid: 0.66;
+      --wash-far: 0.52;
+    }
   }
 
   .page-hero__inner {
@@ -297,40 +307,6 @@ const vars = {
     align-self: flex-end;
     margin-top: 5.375rem; /* 86 */
     margin-right: max(0px, calc(var(--titleWidth) - var(--copyWidth)));
-  }
-
-  /* Once the band crops to `cover` the render drifts under the copy, so add a
-     directional wash. The frame itself does not need one: there the copy sits
-     over open floor. */
-  @media (max-width: 1200px) {
-    /* `--wash` already carries a stronger version of this at every width, and
-       being a single class it would otherwise lose to this rule on source
-       order alone. */
-    .page-hero__scrim:not(.page-hero__scrim--wash) {
-      background:
-        linear-gradient(
-          to right,
-          rgba(19, 20, 0, 0.72) 0%,
-          rgba(19, 20, 0, 0.4) 50%,
-          rgba(19, 20, 0, 0.05) 80%
-        ),
-        var(--scrim);
-    }
-
-    /* The wash above is set in percentages of the band, but the copy's share
-       of that band grows as the viewport narrows — at 900 the heading runs to
-       86% where the gradient has already released, and the title measured
-       2.16:1. Once the copy fills the width the veil has to as well. */
-    .page-hero__scrim--wash {
-      background:
-        linear-gradient(
-          to right,
-          rgba(19, 20, 0, 0.7) 0%,
-          rgba(19, 20, 0, 0.66) 50%,
-          rgba(19, 20, 0, 0.6) 100%
-        ),
-        var(--scrim);
-    }
   }
 
   /* The frame's band is a 2.05:1 landscape crop. Holding its 780px height at

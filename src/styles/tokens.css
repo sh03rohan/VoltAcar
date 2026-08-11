@@ -12,6 +12,10 @@
   --c-ink: #131400; /* "Text Color 950" — body text, dark sections, footer   */
   --c-cream: #f4f3ef; /* "Text Color 800" — page background, text on dark    */
   --c-muted: #6e6e68; /* "Text Color 400" — secondary body copy             */
+  /* The same role on an ink surface. The Figma uses Text Color 400 on both,
+     but it measures 5.13:1 on cream and only 3.63:1 on #131400 — a real
+     failure for 14px copy. Lifted until it clears 4.5.                     */
+  --c-muted-on-dark: #82827a; /* 4.80:1 on --c-ink                          */
   --c-steel: #84a2ba; /* "Text Color 300" — heading highlight, card divider  */
   --c-white: #ffffff;
 
