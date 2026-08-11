@@ -1,0 +1,39 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Header from '../components/layout/Header.astro';
+import Footer from '../components/layout/Footer.astro';
+import PageHero from '../components/sections/PageHero.astro';
+import Newsletter from '../components/sections/Newsletter.astro';
+import { site } from '../config/site';
+
+import featuresHero from '../assets/images/features-hero.webp';
+---
+
+<BaseLayout
+  title={`Features | ${site.name}`}
+  description="Advanced technology, thoughtful design and intelligent safety features — a closer look at what makes every VoltACar drive safer, cleaner and more enjoyable."
+>
+  <Header slot="header" />
+
+  {/* Figma #124:165 — the render sits 1701x888 at (-101.15, -62) of the band */}
+  <PageHero
+    title="Designed for Intelligent Electric Mobility"
+    body="Discover how our advanced technology, thoughtful design, and innovative features make every drive safer, cleaner, and more enjoyable."
+    image={featuresHero}
+    scrim="radial-gradient(53.75% 110.26% at 80.88% 62.79%, rgba(19, 20, 0, 0) 0%, rgba(19, 20, 0, 0.43) 38%, rgba(19, 20, 0, 0.66) 63%, rgba(19, 20, 0, 0.83) 100%)"
+    imageWidth={106.3125}
+    imageLeft={-6.3219}
+    imageTop={-7.9487}
+    imageFocus="66% 50%"
+    copyWidth={859}
+    bodyWidth={803}
+  />
+
+  {/* Remaining Features sections follow in Sub-phase 2.2 onward. */}
+
+  {/* Figma #266:15681 — global */}
+  <Newsletter />
+
+  {/* Figma #282:16790 — global */}
+  <Footer slot="footer" />
+</BaseLayout>
