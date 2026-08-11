@@ -50,20 +50,32 @@ const posts = (await getCollection('blog', ({ data }) => !data.draft)).sort(
     <div class="container">
       <h2 class="articles__title" id="articles-title">Blog / Articles</h2>
 
-      <div class="articles__list">
-        {
-          posts.map((post, i) => (
-            <BlogCard
-              title={post.data.title}
-              description={post.data.description}
-              href={`/blog/${post.id}`}
-              cover={post.data.cover}
-              coverAlt={post.data.coverAlt}
-              eager={i === 0}
-            />
-          ))
-        }
-      </div>
+      {
+        posts.length > 0 ? (
+          <div class="articles__list">
+            {posts.map((post, i) => (
+              <BlogCard
+                title={post.data.title}
+                description={post.data.description}
+                href={`/blog/${post.id}`}
+                cover={post.data.cover}
+                coverAlt={post.data.coverAlt}
+                eager={i === 0}
+              />
+            ))}
+          </div>
+        ) : (
+          /* Never a silent gap. An empty collection is a legitimate state for
+             anyone starting from this template, and it is also what a stale
+             dev server looks like — so it says which, rather than rendering a
+             heading above nothing. */
+          <p class="articles__empty">
+            No posts yet. Add a markdown file to <code>src/content/blog/</code> and it will appear
+            here. If you were expecting posts, restart the dev server — the content collection is
+            read at startup.
+          </p>
+        )
+      }
     </div>
   </section>
 
@@ -94,6 +106,21 @@ const posts = (await getCollection('blog', ({ data }) => !data.draft)).sort(
   .articles__list {
     display: flex;
     flex-direction: column;
+  }
+
+  .articles__empty {
+    max-width: 44rem;
+    padding-block: var(--sp-32);
+    border-top: 0.5px solid var(--c-steel);
+    font-size: var(--fs-lead);
+    line-height: var(--lh-body);
+    color: var(--c-muted);
+  }
+
+  .articles__empty code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.9em;
+    color: var(--c-ink);
   }
 
   @media (max-width: 992px) {
