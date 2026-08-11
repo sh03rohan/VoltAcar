@@ -59,6 +59,13 @@ interface Props {
    */
   copyTop?: number;
   /**
+   * Adds a left-to-right wash at every width, not just where the band crops.
+   * For renders whose own composition puts bright ground under the copy — the
+   * privacy hero's sunlit valley measures 3.83:1 on the lead and 2.23:1 on the
+   * title without it. The frame has the same problem; it is not a build error.
+   */
+  copyWash?: boolean;
+  /**
    * Where the lead sits under the heading. The blog single (#83:527) drops it
    * clear of the heading and hangs it off the copy block's right edge instead
    * of its left — the frame places it at x=457 with a 687 measure, and
@@ -86,6 +93,7 @@ const {
   bodyWidth = 803,
   titleWidth = copyWidth,
   copyTop = 265,
+  copyWash = false,
   leadAlign = 'start',
 } = Astro.props;
 
@@ -108,6 +116,11 @@ const vars = {
   bodyWidth: `${bodyWidth / 16}rem`,
   titleWidth: `${titleWidth / 16}rem`,
   copyTop: `${copyTop / 16}rem`,
+  /* The drop ramps at 10vw, which is 160px of the 1600 frame, so the fixed
+     part of the ramp is whatever is left of the frame's own value. Without
+     this the ramp always peaks at 265 and a larger `copyTop` raises only the
+     ceiling — a clamp whose middle term never reaches it. */
+  copyBase: `${(copyTop - 160) / 16}rem`,
 };
 ---
 
@@ -123,7 +136,7 @@ const vars = {
       fetchpriority="high"
       data-page-hero-image
     />
-    <div class="page-hero__scrim"></div>
+    <div class:list={['page-hero__scrim', copyWash && 'page-hero__scrim--wash']}></div>
   </div>
 
   <div class="page-hero__inner">
@@ -132,8 +145,17 @@ const vars = {
           keeps the copy column's own 24. */}
       <div class="page-hero__head">
         {eyebrow && <p class="page-hero__eyebrow" data-page-hero-lead>{eyebrow}</p>}
+        {/* A newline in `title` is the frame's own hard break (#73:584 sets
+            "Our Promise to \nProtect Your Data"). It is kept as a <br> rather
+            than reverse-engineered into a measure, and dropped below 992
+            where the column is too narrow for the designed break to help. */}
         <h1 class="page-hero__title" data-page-hero-title>
-          {title}{titleAccent && <span class="page-hero__accent">{titleAccent}</span>}{titleTrail}
+          {title.split('\n').map((line, i) => (
+            <>
+              {i > 0 && <br class="page-hero__break" />}
+              {line}
+            </>
+          ))}{titleAccent && <span class="page-hero__accent">{titleAccent}</span>}{titleTrail}
         </h1>
       </div>
       {
@@ -188,6 +210,26 @@ const vars = {
     background: var(--scrim);
   }
 
+  /* Anchored to where the copy actually ends rather than to a share of the
+     band. Percentages looked right at 1600 and failed at 1280 (lead 4.02:1),
+     because the copy's share of the band grows as the viewport narrows while
+     the stops stay put. Stated against `--gutter + --copyWidth`, the release
+     tracks the text at every width and the render keeps its own light beyond
+     it. */
+  .page-hero__scrim--wash {
+    --wash-end: calc(var(--gutter) + var(--copyWidth));
+
+    background:
+      linear-gradient(
+        to right,
+        rgba(19, 20, 0, 0.62) 0,
+        rgba(19, 20, 0, 0.56) calc(var(--gutter) + var(--copyWidth) * 0.8),
+        rgba(19, 20, 0, 0.44) var(--wash-end),
+        rgba(19, 20, 0, 0) calc(var(--wash-end) + 12rem)
+      ),
+      var(--scrim);
+  }
+
   .page-hero__inner {
     position: relative;
     z-index: 1;
@@ -197,7 +239,7 @@ const vars = {
     margin-inline: auto;
     /* The frame's own drop, held only where the band is at full height; the
        ramp below it is the same on every page. */
-    padding: clamp(9rem, 6.5625rem + 10vw, var(--copyTop)) var(--gutter) var(--sp-80);
+    padding: clamp(9rem, calc(var(--copyBase) + 10vw), var(--copyTop)) var(--gutter) var(--sp-80);
   }
 
   .page-hero__copy {
@@ -261,13 +303,31 @@ const vars = {
      directional wash. The frame itself does not need one: there the copy sits
      over open floor. */
   @media (max-width: 1200px) {
-    .page-hero__scrim {
+    /* `--wash` already carries a stronger version of this at every width, and
+       being a single class it would otherwise lose to this rule on source
+       order alone. */
+    .page-hero__scrim:not(.page-hero__scrim--wash) {
       background:
         linear-gradient(
           to right,
           rgba(19, 20, 0, 0.72) 0%,
           rgba(19, 20, 0, 0.4) 50%,
           rgba(19, 20, 0, 0.05) 80%
+        ),
+        var(--scrim);
+    }
+
+    /* The wash above is set in percentages of the band, but the copy's share
+       of that band grows as the viewport narrows — at 900 the heading runs to
+       86% where the gradient has already released, and the title measured
+       2.16:1. Once the copy fills the width the veil has to as well. */
+    .page-hero__scrim--wash {
+      background:
+        linear-gradient(
+          to right,
+          rgba(19, 20, 0, 0.7) 0%,
+          rgba(19, 20, 0, 0.66) 50%,
+          rgba(19, 20, 0, 0.6) 100%
         ),
         var(--scrim);
     }
@@ -353,6 +413,14 @@ const vars = {
     .page-hero__lead--end {
       margin-top: 0;
       margin-right: 0;
+    }
+  }
+
+  /* Below the container's own width the frame's break is no longer the
+     shortest line — the browser's is. */
+  @media (max-width: 992px) {
+    .page-hero__break {
+      display: none;
     }
   }
 </style>

@@ -1,0 +1,49 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Header from '../components/layout/Header.astro';
+import Footer from '../components/layout/Footer.astro';
+import PageHero from '../components/sections/PageHero.astro';
+import Newsletter from '../components/sections/Newsletter.astro';
+import { site } from '../config/site';
+
+import privacyHero from '../assets/images/privacy-hero.webp';
+---
+
+<BaseLayout
+  title={`Privacy Policy | ${site.name}`}
+  description="How VoltACar collects, uses, stores, and safeguards your personal information when you use our website or electric mobility products."
+>
+  <Header slot="header" />
+
+  {/* Figma #73:384. One plate, where the blog hero stacks two — this is the
+      *lower* of that pair, which the blog's charging-area plate covers
+      completely, so it needs its own asset rather than blog-hero.webp.
+
+      The scrim rect (#73:613) is byte-for-byte the blog's #237:840: 1600x829
+      at y=-46 with the same stops. Its radius was measured there and is
+      restated here against the 780 band.
+
+      The frame draws this band twice — #308:711 is a pixel-identical
+      duplicate stacked on top. One band. */}
+  <PageHero
+    title={'Our Promise to \nProtect Your Data'}
+    body="This Privacy Policy explains how VoltACar collects, uses, stores, and safeguards your personal information when you use our website or electric mobility products."
+    image={privacyHero}
+    scrim="radial-gradient(47.37% 112.31% at 77.35% 73.67%, rgba(19,20,0,0) 0%, rgba(19,20,0,0.43) 46%, rgba(19,20,0,0.83) 100%)"
+    imageWidth={104.8125}
+    imageLeft={-1.75}
+    imageTop={-1.5385}
+    imageFocus="62% 50%"
+    imageFocusNarrow="72% 50%"
+    copyWidth={803}
+    bodyWidth={803}
+    copyTop={280}
+    copyWash
+  />
+
+  {/* Figma #91:572 */}
+  <Newsletter />
+
+  {/* Figma #91:594 */}
+  <Footer slot="footer" />
+</BaseLayout>
