@@ -1,0 +1,350 @@
+---
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+import slideRoof from '../../assets/images/slide-roof.webp';
+import slideRide from '../../assets/images/slide-ride.webp';
+import slideInterior from '../../assets/images/slide-interior.webp';
+import slideCharge from '../../assets/images/slide-charge.webp';
+import slideStyle from '../../assets/images/slide-style.webp';
+
+/**
+ * "Experience Next-Level Features" — Figma #132:515.
+ *
+ *   header #126:348   120 tall, space-between across the 1400 container:
+ *                     a 64/1em heading at 556 and a 20/1.5 lead at 565
+ *   gap               80
+ *   track  #130:460   five 900x575 cards, 32 apart, which the frame marks
+ *                     overflowScroll:["x"] — 4628 of track against 1400
+ *
+ * The track is a real horizontal scroll region by default, which is what the
+ * frame specifies and what touch, keyboard and reduced-motion users get. On a
+ * fine pointer with motion allowed the script upgrades it: the section pins
+ * and the track is scrubbed to scroll position, so scrolling down slides the
+ * cards right-to-left and scrolling back up reverses them.
+ *
+ * Card images are cropped to the 900x575 window each card shows, so the
+ * frame's per-card offset is baked into the asset.
+ */
+interface Slide {
+  title: string;
+  body: string;
+  image: ImageMetadata;
+  alt: string;
+  /** Body measure from the frame — it sets the designed line breaks. */
+  bodyWidth: number;
+}
+
+const slides: Slide[] = [
+  {
+    title: 'Panoramic Glass Roof',
+    body: 'Enjoy an open, airy cabin with our panoramic glass roof, bringing natural light, fresh air, and breathtaking views to every journey.',
+    image: slideRoof,
+    alt: 'A VoltACar parked on a cliffside road under an open sky',
+    bodyWidth: 739,
+  },
+  {
+    title: 'Engineered for a Smooth Ride',
+    body: 'Experience unparalleled comfort with precision-tuned suspension and advanced shock absorption, ensuring every drive feels effortless and serene.',
+    image: slideRide,
+    alt: 'Low-angle close-up of a VoltACar wheel and suspension',
+    bodyWidth: 773,
+  },
+  {
+    title: 'Spacious Interior',
+    body: 'Enjoy generous legroom and thoughtful cabin design, providing comfort and flexibility for passengers on every journey.',
+    image: slideInterior,
+    alt: 'The VoltACar interior looking out over a mountain range',
+    bodyWidth: 714,
+  },
+  {
+    title: 'Charge Anywhere, Anytime',
+    body: 'Stay powered on the go with versatile charging options, at home, on the road, or in remote locations.',
+    image: slideCharge,
+    alt: 'A VoltACar connected to a charging post in open country',
+    bodyWidth: 698,
+  },
+  {
+    title: 'Style That Turns Heads',
+    body: 'With a sleek silhouette and modern details, VoltACar stands out on the road while moving effortlessly through the city.',
+    image: slideStyle,
+    alt: 'A VoltACar moving through a sunlit city avenue',
+    bodyWidth: 691,
+  },
+];
+---
+
+<section class="slider" data-feature-slider aria-labelledby="feature-slider-title">
+  <div class="container slider__header">
+    <h2 class="slider__title" id="feature-slider-title">Experience Next-Level Features</h2>
+    <p class="slider__lead">
+      From advanced safety to smart connectivity, VoltACar is packed with innovative features
+      designed to make every drive effortless and enjoyable.
+    </p>
+  </div>
+
+  <div
+    class="slider__viewport"
+    data-slider-viewport
+    tabindex="0"
+    role="group"
+    aria-label="Feature highlights, scrollable"
+  >
+    <ul class="slider__track" role="list" data-slider-track>
+      {
+        slides.map((slide, i) => (
+          <li class="slide">
+            <Image
+              class="slide__image"
+              src={slide.image}
+              alt={slide.alt}
+              widths={[600, 900, 1350, 1800]}
+              sizes="(max-width: 1024px) 88vw, 900px"
+              loading={i === 0 ? 'eager' : 'lazy'}
+              decoding="async"
+            />
+            <div class="slide__scrim"></div>
+            <div class="slide__body">
+              <h3 class="slide__title">{slide.title}</h3>
+              <p class="slide__text" style={`max-width:${slide.bodyWidth / 16}rem`}>
+                {slide.body}
+              </p>
+            </div>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</section>
+
+<style>
+  .slider {
+    /* Figma: 180 of cream above the heading (on top of the white band's own
+       180 below the last row) and 180 below the cards. Margin rather than
+       padding so the box ScrollTrigger pins stays the frame's 775 — padding
+       would make the pinned block taller than a laptop viewport. */
+    margin-block: var(--section-gap);
+    /* Guards against the track ever widening the page while it is offset. */
+    overflow: hidden;
+  }
+
+  /* Figma: 120 tall, space-between, then 80 before the track. */
+  .slider__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: var(--sp-48);
+    /* Fixed, not a minimum: the 64px heading wraps to two lines (128) and the
+       frame lets it overflow this row by 8 into the 80 gap below, which is how
+       the cards still start at exactly 200. */
+    height: 7.5rem;
+    margin-bottom: var(--sp-80);
+  }
+
+  .slider__title {
+    max-width: 34.75rem; /* 556 */
+    font-size: var(--fs-h2); /* 64 */
+    font-weight: var(--fw-bold);
+    line-height: var(--lh-tight);
+    color: var(--c-ink);
+  }
+
+  .slider__lead {
+    max-width: 35.3125rem; /* 565 */
+    font-size: var(--fs-lead); /* 20 */
+    line-height: var(--lh-body);
+    color: var(--c-ink);
+  }
+
+  /* The padding sets where the first card starts and where the last one ends;
+     the cards themselves bleed through it to the viewport edge as they move,
+     because `overflow` clips at the padding box, not the content box. */
+  .slider__viewport {
+    padding-inline: var(--gutter);
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    /* Without this the snapport starts at the padding box, so the browser
+       scrolls the gutter away on load to align the first slide's start edge
+       and card one sits flush to the screen instead of the container. */
+    scroll-padding-inline: var(--gutter);
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .slider__viewport::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Set by the script once the pinned version takes over. */
+  .slider__viewport[data-pinned] {
+    overflow: hidden;
+    scroll-snap-type: none;
+  }
+
+  .slider__track {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-32);
+    width: max-content;
+    margin: 0;
+    padding: 0;
+    will-change: transform;
+  }
+
+  .slide {
+    position: relative;
+    flex: none;
+    width: min(56.25rem, 88vw); /* 900 */
+    aspect-ratio: 900 / 575;
+    border-radius: var(--r-sm);
+    overflow: hidden;
+    isolation: isolate;
+    scroll-snap-align: start;
+    background-color: var(--c-white);
+  }
+
+  .slide__image {
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* Figma #132:477 and siblings. */
+  .slide__scrim {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: linear-gradient(
+      180deg,
+      rgba(0, 0, 0, 0) 0%,
+      rgba(0, 0, 0, 0.31) 58%,
+      rgba(0, 0, 0, 0.5) 99%
+    );
+  }
+
+  /* Figma #132:487: padding 0 32 32, gap 12, anchored to the card's foot. */
+  .slide__body {
+    position: absolute;
+    inset: auto 0 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-12);
+    padding: 0 var(--sp-32) var(--sp-32);
+    color: var(--c-cream);
+  }
+
+  .slide__title {
+    font-size: var(--fs-h4); /* 36 */
+    font-weight: var(--fw-semibold);
+    line-height: var(--lh-tight);
+  }
+
+  /* 18, which sits between --fs-body and --fs-lead. */
+  .slide__text {
+    font-size: clamp(0.9375rem, 0.85rem + 0.27vw, 1.125rem);
+    line-height: var(--lh-body);
+  }
+
+  /* ---------- Responsive ---------- */
+
+  @media (max-width: 992px) {
+    .slider__header {
+      flex-direction: column;
+      gap: var(--sp-24);
+      height: auto;
+      margin-bottom: var(--section-gap-sm);
+    }
+
+    .slider__title,
+    .slider__lead {
+      max-width: none;
+    }
+  }
+
+  /* The frame's scrim is tuned to a 900x575 card, where the copy block covers
+     the bottom 23%. On a phone-width card it covers over half the height and
+     reaches well above the dark end of that gradient, so both the wash and the
+     title scale with the card rather than the frame. */
+  @media (max-width: 700px) {
+    /* At 343px wide the frame's 1.565 ratio leaves a 219px card — too short
+       for a title and four lines of copy. A taller card puts the block back
+       at roughly the quarter-height it occupies in the design. */
+    .slide {
+      aspect-ratio: 4 / 5;
+    }
+
+    .slide__scrim {
+      background: linear-gradient(
+        180deg,
+        rgba(0, 0, 0, 0) 0%,
+        rgba(0, 0, 0, 0.45) 38%,
+        rgba(0, 0, 0, 0.78) 100%
+      );
+    }
+
+    .slide__title {
+      font-size: clamp(1.25rem, 5.5vw, 2.25rem);
+    }
+
+    .slide__body {
+      padding: 0 var(--sp-20) var(--sp-20);
+      gap: var(--sp-8);
+    }
+  }
+</style>
+
+<script>
+  import { gsap, ScrollTrigger, prefersReducedMotion } from '../../scripts/motion';
+
+  const section = document.querySelector<HTMLElement>('[data-feature-slider]');
+  const viewport = section?.querySelector<HTMLElement>('[data-slider-viewport]');
+  const track = section?.querySelector<HTMLElement>('[data-slider-track]');
+
+  /* Touch and coarse pointers keep the native scroll region: a pinned section
+     fights the momentum scrolling they already expect. */
+  const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
+  if (section && viewport && track && finePointer && !prefersReducedMotion()) {
+    viewport.dataset.pinned = '';
+    // The region no longer scrolls, so it should not be a tab stop either.
+    viewport.removeAttribute('tabindex');
+    viewport.removeAttribute('role');
+    viewport.removeAttribute('aria-label');
+
+    /**
+     * How far the track has to move for the last card to finish flush with
+     * the container's right edge: its full width minus the container's content
+     * box. Read lazily so ScrollTrigger recalculates it on resize.
+     */
+    const distance = (): number => {
+      const styles = getComputedStyle(viewport);
+      const inner =
+        viewport.clientWidth -
+        parseFloat(styles.paddingLeft) -
+        parseFloat(styles.paddingRight);
+      return Math.max(0, track.scrollWidth - inner);
+    };
+
+    const travel = gsap.to(track, { x: () => -distance(), ease: 'none' });
+
+    ScrollTrigger.create({
+      trigger: section,
+      // Centred rather than top-aligned: the section is shorter than most
+      // viewports, so pinning it to the top would leave it hanging.
+      start: 'center center',
+      end: () => `+=${distance()}`,
+      pin: true,
+      // Eases toward the scroll position in both directions rather than
+      // tracking it rigidly.
+      scrub: 0.8,
+      anticipatePin: 1,
+      invalidateOnRefresh: true,
+      animation: travel,
+    });
+
+    window.addEventListener('resize', () => ScrollTrigger.refresh());
+  }
+</script>
