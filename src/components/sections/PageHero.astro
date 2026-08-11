@@ -241,9 +241,12 @@ const vars = {
     }
 
     .page-hero__inner {
-      /* The foot padding reserves a clear strip, so the render is never
-         only a backdrop — part of it is always in the open. */
-      padding-block: 7.5rem 13rem;
+      /* The head clears the collapsed header, which is 40-64 here rather than
+         the 80 the desktop padding was sized against; the foot reserves a
+         clear strip so the render is never only a backdrop. Together they were
+         328px against a copy block of ~374 — nearly half the band was padding,
+         which is what made these run so tall. */
+      padding-block: 6rem 9rem;
     }
 
     .page-hero__image {
@@ -276,18 +279,24 @@ const vars = {
     .page-hero__scrim {
       background: linear-gradient(
         to bottom,
-        rgba(19, 20, 0, 0.74) 0%,
-        rgba(19, 20, 0, 0.66) 40%,
-        /* The copy runs out around 62%, and the strip's brightest area — sky
-           and windscreen — is right behind it, so the wash only starts
-           releasing past that point. */ rgba(19, 20, 0, 0.6) 62%,
-        rgba(19, 20, 0, 0.12) 82%,
-        rgba(19, 20, 0, 0.4) 100%
+        rgba(19, 20, 0, 0.76) 0%,
+        rgba(19, 20, 0, 0.72) 45%,
+        /* Holds to ~72%, which is where the copy now ends: the shorter foot
+           padding and the full-width measure both push it lower and further
+           right, over the sunlit part of the render rather than clear of it.
+           Releasing at the old 62% left the lead at 2.89:1. */
+          rgba(19, 20, 0, 0.7) 72%,
+        rgba(19, 20, 0, 0.3) 86%,
+        rgba(19, 20, 0, 0.18) 94%,
+        rgba(19, 20, 0, 0.45) 100%
       );
     }
 
+    /* The frame's measure is set against a 1400 container. Holding a fixed one
+       here left the lead stopping well short of a heading that spans the whole
+       column — 480 against 671 at 768 — so the two now share an edge. */
     .page-hero__lead {
-      max-width: 30rem;
+      max-width: none;
     }
   }
 </style>
