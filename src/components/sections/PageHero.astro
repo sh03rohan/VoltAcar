@@ -45,6 +45,26 @@ interface Props {
   /** Copy block width and body width, in px, from the frame. */
   copyWidth?: number;
   bodyWidth?: number;
+  /**
+   * Heading measure, where the frame lets it run past the copy block. On the
+   * blog single the text box is 1102 inside a 1042 column, and the 60 is load
+   * bearing: at 1042 the title takes a third line.
+   */
+  titleWidth?: number;
+  /**
+   * Where the copy block starts, in px. 265 on every frame but the blog
+   * single (#83:532), which sits at 250 — the only page whose heading runs to
+   * two full lines.
+   */
+  copyTop?: number;
+  /**
+   * Where the lead sits under the heading. The blog single (#83:527) drops it
+   * clear of the heading and hangs it off the copy block's right edge instead
+   * of its left — the frame places it at x=457 with a 687 measure, and
+   * 457 + 687 is the copy block's own 1042 to within 2px, so it is an
+   * alignment rather than an arbitrary indent.
+   */
+  leadAlign?: 'start' | 'end';
 }
 
 const {
@@ -63,6 +83,9 @@ const {
   imageFocusNarrow = imageFocus,
   copyWidth = 859,
   bodyWidth = 803,
+  titleWidth = copyWidth,
+  copyTop = 265,
+  leadAlign = 'start',
 } = Astro.props;
 
 /* The render is wider than the band by design, so `100vw` would understate it
@@ -82,6 +105,8 @@ const vars = {
   imgFocusNarrow: imageFocusNarrow,
   copyWidth: `${copyWidth / 16}rem`,
   bodyWidth: `${bodyWidth / 16}rem`,
+  titleWidth: `${titleWidth / 16}rem`,
+  copyTop: `${copyTop / 16}rem`,
 };
 ---
 
@@ -110,7 +135,13 @@ const vars = {
           {title}{titleAccent && <span class="page-hero__accent">{titleAccent}</span>}{titleTrail}
         </h1>
       </div>
-      {body && <p class="page-hero__lead" data-page-hero-lead>{body}</p>}
+      {
+        body && (
+          <p class:list={['page-hero__lead', `page-hero__lead--${leadAlign}`]} data-page-hero-lead>
+            {body}
+          </p>
+        )
+      }
       {
         Astro.slots.has('default') && (
           <div class="page-hero__actions" data-page-hero-lead>
@@ -163,8 +194,9 @@ const vars = {
     width: 100%;
     max-width: calc(var(--container) + var(--gutter) * 2);
     margin-inline: auto;
-    /* Figma: the copy block starts 265px down. */
-    padding: clamp(9rem, 6.5625rem + 10vw, 16.5625rem) var(--gutter) var(--sp-80);
+    /* The frame's own drop, held only where the band is at full height; the
+       ramp below it is the same on every page. */
+    padding: clamp(9rem, 6.5625rem + 10vw, var(--copyTop)) var(--gutter) var(--sp-80);
   }
 
   .page-hero__copy {
@@ -172,7 +204,10 @@ const vars = {
     flex-direction: column;
     align-items: flex-start;
     gap: var(--sp-24);
-    max-width: var(--copyWidth);
+    /* The heading is the widest thing in the column, so it sets the column.
+       Anything measured against the narrower copy block subtracts the
+       difference back off — see `--lead-inset`. */
+    max-width: var(--titleWidth);
   }
 
   .page-hero__head {
@@ -206,6 +241,18 @@ const vars = {
     max-width: var(--bodyWidth);
     font-size: var(--fs-lead);
     line-height: var(--lh-body);
+  }
+
+  /* Hangs off the copy block's right edge rather than its left, and drops
+     clear of the heading: the frame's y=504 against a heading that ends at
+     394, of which the column's own 24 is already spent.
+
+     The margin puts the column's edge back where the copy block's is, since
+     the column has been widened to hold the heading. */
+  .page-hero__lead--end {
+    align-self: flex-end;
+    margin-top: 5.375rem; /* 86 */
+    margin-right: max(0px, calc(var(--titleWidth) - var(--copyWidth)));
   }
 
   /* Once the band crops to `cover` the render drifts under the copy, so add a
@@ -297,6 +344,13 @@ const vars = {
        column — 480 against 671 at 768 — so the two now share an edge. */
     .page-hero__lead {
       max-width: none;
+    }
+
+    /* The measure now fills the column, so there is nothing left to hang the
+       lead off and the 86 drop is only dead band. */
+    .page-hero__lead--end {
+      margin-top: 0;
+      margin-right: 0;
     }
   }
 </style>

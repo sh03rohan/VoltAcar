@@ -1,0 +1,117 @@
+---
+/**
+ * The article column of a blog post — Figma #263:981.
+ *
+ * The frame sets body copy in a 684 measure centred in the 1600 frame, which
+ * is the same axis as the 1400 container, so this centres itself rather than
+ * living inside one. Figures break out of that measure and are handled in
+ * their own component.
+ *
+ * Everything here is `:global()` under `.prose`: the markdown arrives through
+ * a slot, so it carries the *page's* scope attribute, never this component's.
+ * Written plainly the rules would match nothing at all.
+ *
+ * The frame only shows paragraphs and one 36/700 heading. The rest of the
+ * markdown vocabulary is styled anyway — a template is bought to be written
+ * in, and an unstyled list or blockquote is a hole in the product.
+ */
+---
+
+<div class="prose">
+  <slot />
+</div>
+
+<style>
+  .prose {
+    /* 684, the frame's measure. */
+    max-width: 42.75rem;
+    margin-inline: auto;
+    font-size: var(--fs-lead); /* 20 */
+    line-height: var(--lh-body);
+    color: var(--c-ink);
+  }
+
+  /* Flow spacing rather than a flex gap, so a figure's 80 collapses against a
+     heading's 20 instead of adding to it. */
+  .prose > :global(* + *) {
+    margin-top: var(--sp-20);
+  }
+
+  /* Figma #263:976: 60 between the paragraph above and the heading. */
+  .prose :global(h2),
+  .prose :global(h3) {
+    margin-top: 3.75rem; /* 60 */
+    font-weight: var(--fw-bold);
+    line-height: var(--lh-heading);
+  }
+
+  .prose :global(h2) {
+    font-size: var(--fs-h4); /* 36 */
+  }
+
+  .prose :global(h3) {
+    font-size: var(--fs-h5); /* 32 */
+  }
+
+  .prose > :global(:first-child) {
+    margin-top: 0;
+  }
+
+  .prose :global(ul),
+  .prose :global(ol) {
+    padding-left: var(--sp-24);
+  }
+
+  .prose :global(li + li) {
+    margin-top: var(--sp-8);
+  }
+
+  .prose :global(li::marker) {
+    color: var(--c-muted);
+  }
+
+  .prose :global(a) {
+    color: inherit;
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.2em;
+    transition: color 0.2s var(--ease-out, ease);
+  }
+
+  .prose :global(a:hover),
+  .prose :global(a:focus-visible) {
+    color: var(--c-muted);
+  }
+
+  .prose :global(strong) {
+    font-weight: var(--fw-bold);
+  }
+
+  /* The lime is a 1.05:1 fill on cream, so it draws the rule rather than the
+     text — which is the only job it can hold here and still be legible. */
+  .prose :global(blockquote) {
+    padding-left: var(--sp-24);
+    border-left: 3px solid var(--c-primary);
+    font-size: var(--fs-h6); /* 24 */
+    line-height: var(--lh-heading);
+  }
+
+  .prose :global(hr) {
+    margin-block: var(--sp-48);
+    border: 0;
+    border-top: 0.5px solid var(--c-steel);
+  }
+
+  .prose :global(code) {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.85em;
+  }
+
+  .prose :global(pre) {
+    padding: var(--sp-24);
+    border-radius: var(--r-sm);
+    background-color: var(--c-ink);
+    color: var(--c-cream);
+    overflow-x: auto;
+  }
+</style>
