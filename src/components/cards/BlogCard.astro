@@ -135,27 +135,26 @@ const { title, description, href, cover, coverAlt = '', eager = false } = Astro.
     text-decoration: none;
   }
 
-  /* Hover sweeps a colour across the title rather than underlining it.
-     The gradient is two flat halves on a box twice the text's width, so
-     sliding its position wipes the new colour in from the left — the same
-     motion a GSAP tween of `backgroundPosition` produces, but without a
-     listener per card, and it still runs if the JS never arrives.
-
-     `inline` with a cloned box decoration gives each line its own gradient
-     box sized to that line, so both lines fill across their own width
-     together instead of sharing one 600px sweep the shorter line finishes
-     early.
+  /* Hover sweeps the brand yellow across the title rather than underlining
+     it. The gradient is two flat halves on a box twice the text's width, so
+     sliding its position wipes the new colour in from the left — the motion a
+     GSAP tween of `backgroundPosition` produces, without a listener per card,
+     and it still runs if the JS never arrives.
 
      Guarded, because the technique needs transparent text: without the
-     support the title would simply be invisible. */
+     support the title would be invisible rather than merely unanimated. */
+  /* `.post__line` is created by the script, so it never carries this
+     component's scope attribute and can only be reached with `:global()`.
+     Written plainly it matches nothing — and since the fill needs transparent
+     text, that leaves the title invisible rather than merely unanimated.
+     Nested under `.post__link`, which is server-rendered and does carry the
+     scope, so nothing leaks past this card. */
   @supports (background-clip: text) or (-webkit-background-clip: text) {
-    .post__link {
-      display: inline;
-      -webkit-box-decoration-break: clone;
-      box-decoration-break: clone;
+    .post__link,
+    .post__link :global(.post__line) {
       background-image: linear-gradient(
         to right,
-        var(--c-muted) 50%,
+        var(--c-primary) 50%,
         var(--c-ink) 50%
       );
       background-size: 200% 100%;
@@ -164,11 +163,34 @@ const { title, description, href, cover, coverAlt = '', eager = false } = Astro.
       background-clip: text;
       color: transparent;
       -webkit-text-fill-color: transparent;
-      transition: background-position 0.55s cubic-bezier(0.33, 1, 0.68, 1);
+      transition: background-position 0.5s cubic-bezier(0.33, 1, 0.68, 1);
+    }
+
+    /* Without JS the link is one box; a cloned decoration still gives each
+       line its own gradient so they fill together rather than sharing one
+       sweep the shorter line finishes early. */
+    .post__link {
+      display: inline;
+      -webkit-box-decoration-break: clone;
+      box-decoration-break: clone;
+    }
+
+    /* Once the script has split the title, the lines carry the fill and the
+       link must stop painting its own over the top of them. */
+    .post__link.is-split {
+      background-image: none;
+    }
+
+    /* Each line waits for the one above it, so a two-line title fills top
+       then bottom instead of both at once. */
+    .post__link :global(.post__line) {
+      transition-delay: calc(var(--line) * 0.16s);
     }
 
     .post:hover .post__link,
-    .post__link:focus-visible {
+    .post:hover .post__link :global(.post__line),
+    .post__link:focus-visible,
+    .post__link:focus-visible :global(.post__line) {
       background-position: 0 0;
     }
   }
@@ -263,8 +285,14 @@ const { title, description, href, cover, coverAlt = '', eager = false } = Astro.
   @media (prefers-reduced-motion: reduce) {
     .post__image,
     .post__more-icon,
-    .post__link {
+    .post__link,
+    .post__link :global(.post__line) {
       transition: none;
+    }
+
+    /* The stagger is the animation; without it the lines change together. */
+    .post__link :global(.post__line) {
+      transition-delay: 0s;
     }
 
     .post:hover .post__image {
@@ -272,3 +300,72 @@ const { title, description, href, cover, coverAlt = '', eager = false } = Astro.
     }
   }
 </style>
+
+<script>
+  /**
+   * Splits each card title into one span per rendered line so the hover fill
+   * can run down them in order. CSS cannot stagger line fragments — they are
+   * not elements — and this is the same thing GSAP's SplitText does.
+   *
+   * Words are wrapped first and grouped by their measured top, so the split
+   * follows the browser's own line breaking rather than guessing at it. The
+   * spans stay `inline` and keep the spaces between them, so re-laying out
+   * the split title breaks in exactly the same places.
+   *
+   * No-JS, and the interval between splitting and this running, both fall
+   * back to the CSS rule on the link itself: the fill still works, it just
+   * arrives on every line at once.
+   */
+  const titles = document.querySelectorAll<HTMLElement>('.post__link');
+
+  function splitIntoLines(link: HTMLElement, text: string): void {
+    // Wrap every word, leaving the whitespace untouched so wrapping is
+    // unaffected by the measurement pass itself.
+    link.innerHTML = text
+      .split(/(\s+)/)
+      .map((chunk) => (/^\s+$/.test(chunk) || chunk === '' ? chunk : `<span>${chunk}</span>`))
+      .join('');
+
+    const words = [...link.querySelectorAll('span')];
+    if (words.length === 0) return;
+
+    const lines: string[][] = [];
+    let lastTop: number | null = null;
+
+    for (const word of words) {
+      const top = Math.round(word.getBoundingClientRect().top);
+      if (lastTop === null || Math.abs(top - lastTop) > 2) {
+        lines.push([]);
+        lastTop = top;
+      }
+      lines[lines.length - 1].push(word.textContent ?? '');
+    }
+
+    link.innerHTML = lines
+      .map((words_, i) => `<span class="post__line" style="--line:${i}">${words_.join(' ')}</span>`)
+      .join(' ');
+    link.classList.add('is-split');
+  }
+
+  function run(): void {
+    titles.forEach((link) => {
+      const text = link.dataset.text ?? link.textContent?.trim() ?? '';
+      if (!link.dataset.text) link.dataset.text = text;
+      link.classList.remove('is-split');
+      splitIntoLines(link, text);
+    });
+  }
+
+  if (titles.length) {
+    // After the webfont lands, or the measurement is of fallback metrics and
+    // the lines come out in the wrong places.
+    void document.fonts.ready.then(run);
+
+    // Line count changes with the column, so the split has to be redone.
+    let resizeTimer: number;
+    window.addEventListener('resize', () => {
+      window.clearTimeout(resizeTimer);
+      resizeTimer = window.setTimeout(run, 150);
+    });
+  }
+</script>
