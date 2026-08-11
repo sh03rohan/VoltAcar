@@ -1,0 +1,655 @@
+---
+import { Image } from 'astro:assets';
+import SocialIcon from '../common/SocialIcon.astro';
+import { social } from '../../config/site';
+import { team } from '../../data/team';
+
+/**
+ * Full-screen profile for a team member, opened by clicking their card.
+ *
+ * Built on a native `<dialog>`: that gives the top layer, the focus trap, the
+ * inert background and Escape for free, so none of it has to be reimplemented.
+ * Escape is intercepted only to let the close animation run before the dialog
+ * actually closes.
+ *
+ * All six panels are rendered server-side and hidden, so the correct member is
+ * a matter of which panel is shown rather than of copying strings around in
+ * JavaScript. Their portraits are lazy — a hidden image is not fetched until
+ * it is displayed — and the grid warms the right one on hover.
+ *
+ * The portraits are already alpha cut-outs (the lime lives on the card, not in
+ * the asset), so lifting the person out needs no masking or extra artwork.
+ *
+ * Depth comes from a `perspective` on the stage with the portrait pushed
+ * toward the viewer and the two copy columns set back, plus an optional
+ * pointer parallax on fine pointers. Nothing here needs a 3D library.
+ */
+const panelId = (i: number) => `team-profile-panel-${i}`;
+---
+
+<dialog class="tp" data-team-profile aria-label="Team member profile">
+  <div class="tp__scrim" data-tp-scrim></div>
+
+  <button class="tp__close" type="button" data-tp-close>
+    <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+      <path
+        d="M5 5l10 10M15 5L5 15"
+        stroke="currentColor"
+        stroke-width="1.75"
+        stroke-linecap="round"></path>
+    </svg>
+    <span class="visually-hidden">Close profile</span>
+  </button>
+
+  <div class="tp__viewport">
+    {
+      team.map((member, i) => (
+        <article class="tp__panel" id={panelId(i)} data-tp-panel={i} hidden>
+          <div class="tp__col tp__col--lead" data-tp-lead>
+            <p class="tp__role">{member.role}</p>
+            <h2 class="tp__name">{member.name}</h2>
+            <span class="tp__rule" aria-hidden="true" />
+            <p class="tp__bio">{member.bio}</p>
+
+            {member.facts && member.facts.length > 0 && (
+              <ul class="tp__facts" role="list">
+                {member.facts.map((fact) => (
+                  <li>{fact}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <div class="tp__figure" data-tp-figure>
+            <Image
+              class="tp__photo"
+              data-tp-photo
+              src={member.image}
+              alt={member.alt}
+              widths={[420, 620, 890]}
+              sizes="(max-width: 700px) 74vw, (max-width: 1100px) 42vw, 32vw"
+              loading="lazy"
+              decoding="async"
+            />
+          </div>
+
+          <div class="tp__col tp__col--aside" data-tp-aside>
+            {member.about && (
+              <div class="tp__block">
+                <h3 class="tp__label">About {member.name.split(' ')[0]}</h3>
+                <p class="tp__about">{member.about}</p>
+              </div>
+            )}
+
+            {member.expertise && member.expertise.length > 0 && (
+              <div class="tp__block">
+                <h3 class="tp__label">Expertise</h3>
+                <ul class="tp__tags" role="list">
+                  {member.expertise.map((tag) => (
+                    <li class="tp__tag">{tag}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <div class="tp__block">
+              <h3 class="tp__label">Connect</h3>
+              <ul class="tp__social" role="list">
+                {social.map((channel) => (
+                  <li>
+                    <a
+                      class="tp__link"
+                      href={channel.href}
+                      rel="noopener noreferrer"
+                      target="_blank"
+                    >
+                      <SocialIcon name={channel.icon} size={18} />
+                      <span class="visually-hidden">{`${member.name} on ${channel.label}`}</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </article>
+      ))
+    }
+  </div>
+</dialog>
+
+<style>
+  /* The dialog itself is the full viewport and carries no chrome; the scrim
+     below it does the darkening so it can be animated (::backdrop cannot be
+     reached from script). */
+  .tp {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    max-width: none;
+    height: 100%;
+    max-height: none;
+    padding: 0;
+    border: 0;
+    overflow: hidden;
+    background: transparent;
+    color: var(--c-cream);
+  }
+
+  .tp::backdrop {
+    background: transparent;
+  }
+
+  .tp:not([open]) {
+    display: none;
+  }
+
+  /* Keeps the page readable behind the profile rather than replacing it —
+     heavily blurred and dimmed, but the team grid stays recognisable. */
+  .tp__scrim {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background: rgba(9, 10, 0, 0.62);
+    -webkit-backdrop-filter: blur(22px) saturate(0.85);
+    backdrop-filter: blur(22px) saturate(0.85);
+  }
+
+  .tp__close {
+    position: absolute;
+    top: clamp(1rem, 0.6rem + 1.6vw, 2rem);
+    right: clamp(1rem, 0.6rem + 1.6vw, 2rem);
+    z-index: 3;
+    display: grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    padding: 0;
+    border: 1px solid rgba(244, 243, 239, 0.35);
+    border-radius: var(--r-pill);
+    background: rgba(19, 20, 0, 0.4);
+    color: var(--c-cream);
+    cursor: pointer;
+    transition:
+      background-color 0.2s ease,
+      border-color 0.2s ease,
+      transform 0.2s ease;
+  }
+
+  .tp__close:hover,
+  .tp__close:focus-visible {
+    border-color: var(--c-primary);
+    background: rgba(19, 20, 0, 0.72);
+    transform: scale(1.06);
+  }
+
+  .tp__viewport {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 100%;
+    /* Scrolls only when the panel genuinely cannot fit, which is the short
+       landscape and small-phone case. */
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: clamp(4.5rem, 3rem + 6vw, 7rem) var(--gutter) clamp(2rem, 1rem + 4vw, 4rem);
+  }
+
+  .tp__panel[hidden] {
+    display: none;
+  }
+
+  /* The columns sit back and the portrait comes forward, so the person reads
+     as nearer the viewer than their own copy. */
+  .tp__panel {
+    display: grid;
+    grid-template-columns: 1fr minmax(18rem, 34rem) 1fr;
+    align-items: center;
+    gap: clamp(1rem, 0.2rem + 3vw, 3.5rem);
+    width: 100%;
+    max-width: 82rem;
+    perspective: 1400px;
+    transform-style: preserve-3d;
+  }
+
+  .tp__col {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-20);
+    transform: translateZ(-70px);
+  }
+
+  .tp__col--aside {
+    gap: var(--sp-32);
+  }
+
+  .tp__role {
+    font-size: var(--fs-small);
+    font-weight: var(--fw-semibold);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--c-primary);
+  }
+
+  .tp__name {
+    font-size: clamp(2rem, 1.3rem + 2.9vw, 3.75rem);
+    font-weight: var(--fw-bold);
+    line-height: var(--lh-tight);
+    color: var(--c-white);
+  }
+
+  .tp__rule {
+    width: 3.5rem;
+    height: 3px;
+    border-radius: var(--r-xs);
+    background: var(--c-primary);
+  }
+
+  .tp__bio {
+    max-width: 24rem;
+    font-size: var(--fs-body);
+    line-height: var(--lh-body);
+    color: var(--c-cream);
+  }
+
+  .tp__facts {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-12);
+    margin: var(--sp-12) 0 0;
+    padding: 0;
+    font-size: var(--fs-body);
+    line-height: var(--lh-body);
+  }
+
+  .tp__label {
+    margin-bottom: var(--sp-12);
+    font-size: var(--fs-small);
+    font-weight: var(--fw-semibold);
+    letter-spacing: 0.08em;
+    color: var(--c-primary);
+  }
+
+  .tp__about {
+    max-width: 20rem;
+    font-size: var(--fs-body);
+    line-height: var(--lh-body);
+  }
+
+  .tp__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-10);
+    margin: 0;
+    padding: 0;
+  }
+
+  .tp__tag {
+    padding: var(--sp-8) var(--sp-16);
+    border: 1px solid rgba(244, 243, 239, 0.3);
+    border-radius: var(--r-pill);
+    font-size: var(--fs-small);
+  }
+
+  .tp__social {
+    display: flex;
+    gap: var(--sp-12);
+    margin: 0;
+    padding: 0;
+  }
+
+  .tp__link {
+    display: grid;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border: 1px solid rgba(244, 243, 239, 0.3);
+    border-radius: var(--r-pill);
+    color: var(--c-cream);
+    transition:
+      color 0.2s ease,
+      border-color 0.2s ease,
+      background-color 0.2s ease;
+  }
+
+  .tp__link:hover,
+  .tp__link:focus-visible {
+    border-color: var(--c-primary);
+    background: var(--c-primary);
+    color: var(--c-ink);
+  }
+
+  /* ---------- The person ---------- */
+
+  .tp__figure {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    /* Forward of the copy, which is what sells the depth. */
+    transform: translateZ(60px);
+  }
+
+  /* A faint bloom behind the shoulders. The cut-out has no plate of its own,
+     so without it the person's dark clothing merges into the dimmed page. */
+  .tp__figure::before {
+    content: '';
+    position: absolute;
+    inset: 4% 0 0;
+    z-index: -1;
+    background: radial-gradient(
+      46% 42% at 50% 44%,
+      rgba(243, 254, 100, 0.16) 0%,
+      rgba(243, 254, 100, 0.05) 45%,
+      rgba(243, 254, 100, 0) 72%
+    );
+  }
+
+  .tp__photo {
+    width: 100%;
+    height: auto;
+    max-height: min(82vh, 46rem);
+    object-fit: contain;
+    /* The cut-out has no plate of its own, so the shadow is what separates it
+       from the blurred page rather than a card edge. */
+    filter: drop-shadow(0 34px 46px rgba(0, 0, 0, 0.55));
+    will-change: transform;
+  }
+
+  /* ---------- Responsive ---------- */
+
+  /* Two columns of copy either side of a portrait stops working well before
+     the portrait itself does, so the copy stacks under it first. */
+  @media (max-width: 1100px) {
+    .tp__panel {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      grid-template-areas:
+        'figure figure'
+        'lead   aside';
+      align-items: start;
+      gap: var(--sp-32);
+    }
+
+    .tp__col--lead {
+      grid-area: lead;
+    }
+
+    .tp__col--aside {
+      grid-area: aside;
+    }
+
+    .tp__figure {
+      grid-area: figure;
+      justify-self: center;
+    }
+
+    .tp__photo {
+      max-height: min(48vh, 26rem);
+    }
+
+    .tp__bio,
+    .tp__about {
+      max-width: none;
+    }
+  }
+
+  @media (max-width: 700px) {
+    .tp__panel {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-areas:
+        'figure'
+        'lead'
+        'aside';
+      gap: var(--sp-24);
+    }
+
+    .tp__viewport {
+      place-items: start center;
+    }
+
+    .tp__photo {
+      max-height: 42vh;
+    }
+
+    .tp__scrim {
+      /* Blur is expensive on phones and the layout already covers most of the
+         page, so it leans on the dim instead. */
+      background: rgba(9, 10, 0, 0.78);
+      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);
+    }
+  }
+
+  /* The depth is decorative; flattening it costs nothing but the effect. */
+  @media (prefers-reduced-motion: reduce) {
+    .tp__col,
+    .tp__figure {
+      transform: none;
+    }
+  }
+</style>
+
+<script>
+  import { gsap, prefersReducedMotion } from '../../scripts/motion';
+
+  const dialog = document.querySelector<HTMLDialogElement>('[data-team-profile]');
+
+  if (dialog) {
+    const scrim = dialog.querySelector<HTMLElement>('[data-tp-scrim]');
+    const closeBtn = dialog.querySelector<HTMLElement>('[data-tp-close]');
+    const panels = [...dialog.querySelectorAll<HTMLElement>('[data-tp-panel]')];
+    const viewport = dialog.querySelector<HTMLElement>('.tp__viewport');
+
+    let current = -1;
+    let busy = false;
+    /** The card that opened the dialog, so focus and the close flight return to it. */
+    let origin: HTMLElement | null = null;
+
+    const reduce = () => prefersReducedMotion();
+
+    /** Locks the page without letting the scrollbar's width shift the layout. */
+    const lockScroll = (on: boolean) => {
+      const root = document.documentElement;
+      if (on) {
+        const gap = window.innerWidth - root.clientWidth;
+        root.style.overflow = 'hidden';
+        if (gap > 0) root.style.paddingRight = `${gap}px`;
+      } else {
+        root.style.overflow = '';
+        root.style.paddingRight = '';
+      }
+    };
+
+    const parts = (panel: HTMLElement) => ({
+      photo: panel.querySelector<HTMLElement>('[data-tp-photo]'),
+      lead: panel.querySelector<HTMLElement>('[data-tp-lead]'),
+      aside: panel.querySelector<HTMLElement>('[data-tp-aside]'),
+    });
+
+    /**
+     * Flies the portrait out of the card it was clicked in: measure the card's
+     * image, measure where the modal's copy has landed, and animate the
+     * difference away. Both are the same asset at the same ratio, so a single
+     * uniform scale is enough — no distortion to correct for.
+     */
+    const flight = (photo: HTMLElement, from: DOMRect) => {
+      const to = photo.getBoundingClientRect();
+      if (!to.width || !from.width) return null;
+      return {
+        x: from.left + from.width / 2 - (to.left + to.width / 2),
+        y: from.top + from.height / 2 - (to.top + to.height / 2),
+        scale: from.width / to.width,
+      };
+    };
+
+    function open(index: number, trigger: HTMLElement) {
+      if (busy || dialog!.open) return;
+      const panel = panels[index];
+      if (!panel) return;
+
+      busy = true;
+      current = index;
+      origin = trigger;
+
+      panels.forEach((p, i) => (p.hidden = i !== index));
+
+      const name = panel.querySelector('.tp__name')?.textContent?.trim();
+      dialog!.setAttribute('aria-label', name ? `${name}, profile` : 'Team member profile');
+
+      dialog!.showModal();
+      lockScroll(true);
+      if (viewport) viewport.scrollTop = 0;
+
+      const { photo, lead, aside } = parts(panel);
+      // The card's own image is the flight's starting frame.
+      const cardImage = trigger.querySelector<HTMLElement>('img');
+      const from = cardImage?.getBoundingClientRect();
+
+      if (reduce()) {
+        gsap.set([scrim, photo, lead, aside].filter(Boolean), { clearProps: 'all' });
+        busy = false;
+        closeBtn?.focus();
+        return;
+      }
+
+      const tl = gsap.timeline({
+        defaults: { ease: 'power3.out' },
+        onComplete: () => {
+          busy = false;
+          // Cleared so nothing inline survives to fight a later resize.
+          gsap.set([photo, lead, aside].filter(Boolean), { clearProps: 'transform,opacity' });
+          closeBtn?.focus();
+        },
+      });
+
+      tl.fromTo(scrim, { opacity: 0 }, { opacity: 1, duration: 0.42 }, 0);
+
+      if (photo) {
+        const f = from ? flight(photo, from) : null;
+        tl.fromTo(
+          photo,
+          f ? { ...f, opacity: 1 } : { scale: 0.86, opacity: 0 },
+          { x: 0, y: 0, scale: 1, opacity: 1, duration: 0.72, ease: 'power3.inOut' },
+          0,
+        );
+      }
+
+      // The copy arrives from its own side, after the portrait has settled.
+      if (lead) tl.fromTo(lead, { opacity: 0, x: -36 }, { opacity: 1, x: 0, duration: 0.5 }, 0.26);
+      if (aside) tl.fromTo(aside, { opacity: 0, x: 36 }, { opacity: 1, x: 0, duration: 0.5 }, 0.32);
+      if (closeBtn) tl.fromTo(closeBtn, { opacity: 0 }, { opacity: 1, duration: 0.3 }, 0.3);
+    }
+
+    function close() {
+      if (busy || !dialog!.open) return;
+      const panel = panels[current];
+
+      const finish = () => {
+        lockScroll(false);
+        dialog!.close();
+        panels.forEach((p) => (p.hidden = true));
+        gsap.set([scrim, closeBtn].filter(Boolean), { clearProps: 'all' });
+        if (panel) {
+          const { photo, lead, aside } = parts(panel);
+          gsap.set([photo, lead, aside].filter(Boolean), { clearProps: 'all' });
+          // Also clears any parallax tilt left on the panel itself.
+          gsap.set(panel, { clearProps: 'all' });
+        }
+        origin?.focus();
+        origin = null;
+        busy = false;
+      };
+
+      if (!panel || reduce()) {
+        finish();
+        return;
+      }
+
+      busy = true;
+      const { photo, lead, aside } = parts(panel);
+      const cardImage = origin?.querySelector<HTMLElement>('img');
+      const from = cardImage?.getBoundingClientRect();
+
+      const tl = gsap.timeline({ defaults: { ease: 'power2.in' }, onComplete: finish });
+
+      if (aside) tl.to(aside, { opacity: 0, x: 24, duration: 0.24 }, 0);
+      if (lead) tl.to(lead, { opacity: 0, x: -24, duration: 0.24 }, 0);
+      if (closeBtn) tl.to(closeBtn, { opacity: 0, duration: 0.2 }, 0);
+
+      if (photo) {
+        // Returns along the same path when the card is still on screen; when it
+        // is not (the page scrolled underneath), it simply settles back.
+        const f = from ? flight(photo, from) : null;
+        tl.to(
+          photo,
+          f
+            ? { ...f, duration: 0.46, ease: 'power3.inOut' }
+            : { scale: 0.9, opacity: 0, duration: 0.32 },
+          0.1,
+        );
+      }
+
+      tl.to(scrim, { opacity: 0, duration: 0.3 }, 0.24);
+    }
+
+    /* ---------- Wiring ---------- */
+
+    document.querySelectorAll<HTMLElement>('[data-tp-open]').forEach((trigger) => {
+      const index = Number(trigger.dataset.tpOpen);
+      trigger.addEventListener('click', () => open(index, trigger));
+
+      // Warms the panel's portrait so the flight has a decoded image to move.
+      const warm = () => {
+        const img = panels[index]?.querySelector<HTMLImageElement>('[data-tp-photo]');
+        if (img && img.loading === 'lazy') img.loading = 'eager';
+      };
+      trigger.addEventListener('pointerenter', warm, { once: true });
+      trigger.addEventListener('focus', warm, { once: true });
+    });
+
+    closeBtn?.addEventListener('click', close);
+    scrim?.addEventListener('click', close);
+
+    // A click landing on the scroll container itself is a click beside the
+    // panel, so it closes too; clicks on the panel bubble from its children.
+    viewport?.addEventListener('click', (event) => {
+      if (event.target === viewport) close();
+    });
+
+    // Escape would otherwise close instantly and skip the animation.
+    dialog.addEventListener('cancel', (event) => {
+      event.preventDefault();
+      close();
+    });
+
+    /* ---------- Pointer parallax ----------
+       Tilts the stage a couple of degrees toward the pointer. The portrait is
+       already forward of the copy in Z, so rotating their shared parent moves
+       it further per degree than the columns — which is the whole effect.
+       Fine pointers only: there is nothing to track on touch. */
+    const fine = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
+    if (fine) {
+      dialog.addEventListener('pointermove', (event) => {
+        const panel = panels[current];
+        if (!panel || busy || reduce()) return;
+
+        const cx = event.clientX / window.innerWidth - 0.5;
+        const cy = event.clientY / window.innerHeight - 0.5;
+
+        gsap.to(panel, {
+          rotateY: cx * 5,
+          rotateX: -cy * 4,
+          duration: 0.6,
+          ease: 'power2.out',
+          overwrite: 'auto',
+        });
+      });
+
+      dialog.addEventListener('pointerleave', () => {
+        const panel = panels[current];
+        if (panel) gsap.to(panel, { rotateY: 0, rotateX: 0, duration: 0.5, ease: 'power2.out' });
+      });
+    }
+  }
+</script>

@@ -1,14 +1,9 @@
 ---
 import { Image } from 'astro:assets';
-import type { ImageMetadata } from 'astro';
 import SocialIcon from '../common/SocialIcon.astro';
+import TeamProfile from './TeamProfile.astro';
 import { social } from '../../config/site';
-import team1 from '../../assets/images/team-1.webp';
-import team2 from '../../assets/images/team-2.webp';
-import team3 from '../../assets/images/team-3.webp';
-import team4 from '../../assets/images/team-4.webp';
-import team5 from '../../assets/images/team-5.webp';
-import team6 from '../../assets/images/team-6.webp';
+import { team as members } from '../../data/team';
 
 /**
  * "Meet Our Team" — Figma #103:189, with the revealed state taken from the
@@ -29,60 +24,13 @@ import team6 from '../../assets/images/team-6.webp';
  * Card internals are sized in `cqw` against the card itself, so the whole
  * composition scales with the column instead of needing a breakpoint per
  * measurement. The card's fixed ratio means those units track its height too.
+ *
+ * Clicking a card opens that member's full-screen profile (TeamProfile). The
+ * trigger is a transparent button laid over the card rather than a handler on
+ * the card itself, so it is a real control for keyboard and assistive tech. It
+ * sits above the portrait but below the detail card, which lets the social
+ * links inside that card stay clickable.
  */
-interface Member {
-  name: string;
-  /** Vertical type up the card's left edge. */
-  role: string;
-  bio: string;
-  image: ImageMetadata;
-  alt: string;
-}
-
-const members: Member[] = [
-  {
-    name: 'John Sans',
-    role: 'Founder & CEO',
-    bio: 'Visionary leader driving innovation and sustainability across all electric mobility projects.',
-    image: team1,
-    alt: 'John Sans',
-  },
-  {
-    name: 'Michael Reed',
-    role: 'Chief Financial Officer',
-    bio: 'Oversees financial strategy, budgeting, and investment planning to drive sustainable growth for VoltACar.',
-    image: team2,
-    alt: 'Michael Reed',
-  },
-  {
-    name: 'Daniel Brooks',
-    role: 'Chief Design Officer',
-    bio: 'Crafting sleek, user-friendly, and human-centered vehicle designs for modern drivers.',
-    image: team3,
-    alt: 'Daniel Brooks',
-  },
-  {
-    name: 'Sarah Thompson',
-    role: 'Head of Technology',
-    bio: 'Tech expert leading product development and cutting-edge EV technology solutions.',
-    image: team4,
-    alt: 'Sarah Thompson',
-  },
-  {
-    name: 'Emily Roberts',
-    role: 'Chief People Officer',
-    bio: 'Leads talent development, employee engagement, and organizational culture to empower VoltACar’s workforce.',
-    image: team5,
-    alt: 'Emily Roberts',
-  },
-  {
-    name: 'Robert Wilson',
-    role: 'Senior Vice President',
-    bio: 'Drives strategic initiatives, oversees cross-functional teams, and ensures operational excellence across VoltACar.',
-    image: team6,
-    alt: 'Robert Wilson',
-  },
-];
 ---
 
 <section class="team" aria-labelledby="team-title">
@@ -113,6 +61,10 @@ const members: Member[] = [
               decoding="async"
             />
 
+            <button class="member__open" type="button" data-tp-open={i}>
+              <span class="visually-hidden">{`View ${member.name}’s profile`}</span>
+            </button>
+
             <div class="member__card">
               <p class="member__name">{member.name}</p>
               {/* Carries the role for anyone not reading the vertical type. */}
@@ -141,6 +93,8 @@ const members: Member[] = [
       }
     </ul>
   </div>
+
+  <TeamProfile />
 </section>
 
 <style>
@@ -203,6 +157,9 @@ const members: Member[] = [
     top: 8.764cqw; /* 39 */
     left: 5.393cqw; /* 24 */
     z-index: 2;
+    /* Decorative and already announced by the profile trigger's label; letting
+       it swallow clicks would punch a hole in the card's hit area. */
+    pointer-events: none;
     writing-mode: vertical-rl;
     transform: rotate(180deg);
     font-size: 7.191cqw; /* 32 */
@@ -223,11 +180,25 @@ const members: Member[] = [
     object-fit: cover;
   }
 
+  /* Covers the whole card so anywhere on the portrait opens the profile. It
+     carries no styling of its own — the card's appearance is unchanged. */
+  .member__open {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    appearance: none;
+  }
+
   /* ---------- Detail card ---------- */
 
   .member__card {
     position: absolute;
-    z-index: 3;
+    z-index: 4;
     right: 4.494cqw; /* 20 */
     bottom: 4.494cqw;
     left: 4.494cqw;
@@ -246,6 +217,10 @@ const members: Member[] = [
     transition:
       opacity 0.32s ease,
       transform 0.32s ease;
+    /* Invisible but still hit-testable, so at rest it would shadow the profile
+       trigger across the bottom third of the card. It takes pointer events
+       back only once it is actually on screen. */
+    pointer-events: none;
   }
 
   /* Focus rather than focus-visible: the reveal has to happen for the social
@@ -256,6 +231,7 @@ const members: Member[] = [
   .member:focus-within .member__card {
     opacity: 1;
     transform: translateY(0);
+    pointer-events: auto;
   }
 
   .member__name {
@@ -335,6 +311,7 @@ const members: Member[] = [
     .member__card {
       opacity: 1;
       transform: none;
+      pointer-events: auto;
     }
   }
 
