@@ -1,6 +1,7 @@
 ---
 import { Image } from 'astro:assets';
 import type { ImageMetadata } from 'astro';
+import ScrollTrack from '../common/ScrollTrack.astro';
 import slideRoof from '../../assets/images/slide-roof.webp';
 import slideRide from '../../assets/images/slide-ride.webp';
 import slideInterior from '../../assets/images/slide-interior.webp';
@@ -16,11 +17,7 @@ import slideStyle from '../../assets/images/slide-style.webp';
  *   track  #130:460   five 900x575 cards, 32 apart, which the frame marks
  *                     overflowScroll:["x"] — 4628 of track against 1400
  *
- * The track is a real horizontal scroll region by default, which is what the
- * frame specifies and what touch, keyboard and reduced-motion users get. On a
- * fine pointer with motion allowed the script upgrades it: the section pins
- * and the track is scrubbed to scroll position, so scrolling down slides the
- * cards right-to-left and scrolling back up reverses them.
+ * The track itself is ScrollTrack, shared with the About gallery (#87:346).
  *
  * Card images are cropped to the 900x575 window each card shows, so the
  * frame's per-card offset is baked into the asset.
@@ -82,38 +79,30 @@ const slides: Slide[] = [
     </p>
   </div>
 
-  <div
-    class="slider__viewport"
-    data-slider-viewport
-    tabindex="0"
-    role="group"
-    aria-label="Feature highlights, scrollable"
-  >
-    <ul class="slider__track" role="list" data-slider-track>
-      {
-        slides.map((slide, i) => (
-          <li class="slide">
-            <Image
-              class="slide__image"
-              src={slide.image}
-              alt={slide.alt}
-              widths={[600, 900, 1350, 1800]}
-              sizes="(max-width: 1024px) 88vw, 900px"
-              loading={i === 0 ? 'eager' : 'lazy'}
-              decoding="async"
-            />
-            <div class="slide__scrim"></div>
-            <div class="slide__body">
-              <h3 class="slide__title">{slide.title}</h3>
-              <p class="slide__text" style={`max-width:${slide.bodyWidth / 16}rem`}>
-                {slide.body}
-              </p>
-            </div>
-          </li>
-        ))
-      }
-    </ul>
-  </div>
+  <ScrollTrack label="Feature highlights, scrollable">
+    {
+      slides.map((slide, i) => (
+        <li class="slide">
+          <Image
+            class="slide__image"
+            src={slide.image}
+            alt={slide.alt}
+            widths={[600, 900, 1350, 1800]}
+            sizes="(max-width: 1024px) 88vw, 900px"
+            loading={i === 0 ? 'eager' : 'lazy'}
+            decoding="async"
+          />
+          <div class="slide__scrim"></div>
+          <div class="slide__body">
+            <h3 class="slide__title">{slide.title}</h3>
+            <p class="slide__text" style={`max-width:${slide.bodyWidth / 16}rem`}>
+              {slide.body}
+            </p>
+          </div>
+        </li>
+      ))
+    }
+  </ScrollTrack>
 </section>
 
 <style>
@@ -155,51 +144,14 @@ const slides: Slide[] = [
     color: var(--c-ink);
   }
 
-  /* The padding sets where the first card starts and where the last one ends;
-     the cards themselves bleed through it to the viewport edge as they move,
-     because `overflow` clips at the padding box, not the content box. */
-  .slider__viewport {
-    padding-inline: var(--gutter);
-    overflow-x: auto;
-    overflow-y: hidden;
-    scroll-snap-type: x mandatory;
-    /* Without this the snapport starts at the padding box, so the browser
-       scrolls the gutter away on load to align the first slide's start edge
-       and card one sits flush to the screen instead of the container. */
-    scroll-padding-inline: var(--gutter);
-    scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .slider__viewport::-webkit-scrollbar {
-    display: none;
-  }
-
-  /* Set by the script once the pinned version takes over. */
-  .slider__viewport[data-pinned] {
-    overflow: hidden;
-    scroll-snap-type: none;
-  }
-
-  .slider__track {
-    display: flex;
-    align-items: center;
-    gap: var(--sp-32);
-    width: max-content;
-    margin: 0;
-    padding: 0;
-    will-change: transform;
-  }
-
+  /* Flex sizing and snap alignment come from ScrollTrack. */
   .slide {
     position: relative;
-    flex: none;
     width: min(56.25rem, 88vw); /* 900 */
     aspect-ratio: 900 / 575;
     border-radius: var(--r-sm);
     overflow: hidden;
     isolation: isolate;
-    scroll-snap-align: start;
     background-color: var(--c-white);
   }
 
@@ -295,56 +247,3 @@ const slides: Slide[] = [
     }
   }
 </style>
-
-<script>
-  import { gsap, ScrollTrigger, prefersReducedMotion } from '../../scripts/motion';
-
-  const section = document.querySelector<HTMLElement>('[data-feature-slider]');
-  const viewport = section?.querySelector<HTMLElement>('[data-slider-viewport]');
-  const track = section?.querySelector<HTMLElement>('[data-slider-track]');
-
-  /* Touch and coarse pointers keep the native scroll region: a pinned section
-     fights the momentum scrolling they already expect. */
-  const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
-
-  if (section && viewport && track && finePointer && !prefersReducedMotion()) {
-    viewport.dataset.pinned = '';
-    // The region no longer scrolls, so it should not be a tab stop either.
-    viewport.removeAttribute('tabindex');
-    viewport.removeAttribute('role');
-    viewport.removeAttribute('aria-label');
-
-    /**
-     * How far the track has to move for the last card to finish flush with
-     * the container's right edge: its full width minus the container's content
-     * box. Read lazily so ScrollTrigger recalculates it on resize.
-     */
-    const distance = (): number => {
-      const styles = getComputedStyle(viewport);
-      const inner =
-        viewport.clientWidth -
-        parseFloat(styles.paddingLeft) -
-        parseFloat(styles.paddingRight);
-      return Math.max(0, track.scrollWidth - inner);
-    };
-
-    const travel = gsap.to(track, { x: () => -distance(), ease: 'none' });
-
-    ScrollTrigger.create({
-      trigger: section,
-      // Centred rather than top-aligned: the section is shorter than most
-      // viewports, so pinning it to the top would leave it hanging.
-      start: 'center center',
-      end: () => `+=${distance()}`,
-      pin: true,
-      // Eases toward the scroll position in both directions rather than
-      // tracking it rigidly.
-      scrub: 0.8,
-      anticipatePin: 1,
-      invalidateOnRefresh: true,
-      animation: travel,
-    });
-
-    window.addEventListener('resize', () => ScrollTrigger.refresh());
-  }
-</script>

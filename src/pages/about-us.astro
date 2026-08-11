@@ -4,6 +4,7 @@ import Header from '../components/layout/Header.astro';
 import Footer from '../components/layout/Footer.astro';
 import PageHero from '../components/sections/PageHero.astro';
 import MissionStatement from '../components/sections/MissionStatement.astro';
+import KidsSafety from '../components/sections/KidsSafety.astro';
 import Newsletter from '../components/sections/Newsletter.astro';
 import { site } from '../config/site';
 
@@ -39,6 +40,9 @@ import aboutHero from '../assets/images/about-hero.webp';
       has no white band here, which the render confirms all the way down to
       the team section. */}
   <MissionStatement statement="We are shaping the next generation of electric mobility — crafted for modern cities, everyday lives, and a cleaner future. Our mission is simple: make electric driving accessible, efficient, and human-centered, from compact designs to advanced technology." />
+
+  {/* Figma #87:355 — heading row plus a six-photo track on ScrollTrack */}
+  <KidsSafety />
 
   {/* Figma #91:572 */}
   <Newsletter />

@@ -1,0 +1,142 @@
+---
+import { Image } from 'astro:assets';
+import ScrollTrack from '../common/ScrollTrack.astro';
+import kids1 from '../../assets/images/kids-1.webp';
+import kids2 from '../../assets/images/kids-2.webp';
+import kids3 from '../../assets/images/kids-3.webp';
+import kids4 from '../../assets/images/kids-4.webp';
+import kids5 from '../../assets/images/kids-5.webp';
+import kids6 from '../../assets/images/kids-6.webp';
+
+/**
+ * "We Care about Kids Safety" — Figma #87:355.
+ *
+ *   header #87:326   space-between across the 1400 container: a 64/1em
+ *                    heading at 565 and a 20/1.5 lead at 565. The row hugs,
+ *                    so its height is the heading's two lines (128).
+ *   gap              80
+ *   track  #87:346   six 565x500 photos, 32 apart — 3550 of row against 1400,
+ *                    so the cards run off the right edge of the frame
+ *
+ * The overflow is the design: the render shows card three cut by the frame
+ * edge. It is the same construction as the Features slider, so the scroll
+ * behaviour is ScrollTrack rather than a second implementation.
+ *
+ * Each photo is downloaded as its own frame render, which bakes in the
+ * per-card crop — three of the six are the same source image behind different
+ * overlays, and only the frame render resolves that correctly.
+ */
+const photos = [
+  { image: kids1, alt: 'Two children buckled into the rear seats, looking at each other' },
+  { image: kids2, alt: 'Two boys seated side by side behind the panoramic side glass' },
+  { image: kids3, alt: 'A girl in a blue shirt beside a boy, both belted in' },
+  { image: kids4, alt: 'Children visible through the window of a parked VoltACar' },
+  { image: kids5, alt: 'A boy smiling from the passenger seat, seat belt across his shoulder' },
+  { image: kids6, alt: 'Two children in the rear seats seen through the open cabin' },
+];
+---
+
+<section class="kids" aria-labelledby="kids-safety-title">
+  <div class="container kids__header">
+    <h2 class="kids__title" id="kids-safety-title">
+      We Care <br class="kids__break" />about Kids Safety
+    </h2>
+    <p class="kids__lead">
+      Exploring how our electric vehicles prioritize child safety with advanced seat restraints,
+      impact protection, and smart monitoring systems for every journey.
+    </p>
+  </div>
+
+  <ScrollTrack label="Child safety gallery, scrollable">
+    {
+      photos.map((photo, i) => (
+        <li class="kids__card">
+          <Image
+            class="kids__image"
+            src={photo.image}
+            alt={photo.alt}
+            widths={[400, 565, 848, 1130]}
+            sizes="(max-width: 720px) 78vw, 565px"
+            loading={i === 0 ? 'eager' : 'lazy'}
+            decoding="async"
+          />
+        </li>
+      ))
+    }
+  </ScrollTrack>
+</section>
+
+<style>
+  .kids {
+    /* Figma: 180 above the heading and 180 below the cards. Margin rather than
+       padding so the box ScrollTrack pins stays the frame's 708 — padding
+       would make the pinned block taller than a laptop viewport. */
+    margin-block: var(--section-gap);
+    /* Guards against the track ever widening the page while it is offset. */
+    overflow: hidden;
+  }
+
+  /* Figma: space-between, then 80 before the track. Unlike the Features
+     header (#126:348) this row hugs rather than sitting at a fixed 120, so
+     the heading's second line sets the height instead of overflowing. */
+  .kids__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: var(--sp-48);
+    margin-bottom: var(--sp-80);
+  }
+
+  .kids__title,
+  .kids__lead {
+    max-width: 35.3125rem; /* 565 */
+  }
+
+  .kids__title {
+    font-size: var(--fs-h2); /* 64 */
+    font-weight: var(--fw-bold);
+    line-height: var(--lh-tight);
+    color: var(--c-ink);
+  }
+
+  .kids__lead {
+    font-size: var(--fs-lead); /* 20 */
+    line-height: var(--lh-body);
+    color: var(--c-ink);
+  }
+
+  /* Flex sizing and snap alignment come from ScrollTrack. */
+  .kids__card {
+    position: relative;
+    width: min(35.3125rem, 78vw); /* 565 */
+    aspect-ratio: 565 / 500;
+    overflow: hidden;
+    background-color: var(--c-white);
+  }
+
+  .kids__image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  @media (max-width: 992px) {
+    .kids__header {
+      flex-direction: column;
+      gap: var(--sp-24);
+      margin-bottom: var(--section-gap-sm);
+    }
+
+    .kids__title,
+    .kids__lead {
+      max-width: none;
+    }
+
+    /* The frame breaks after "We Care" to balance the heading against a 565
+       measure. Once the heading spans the container that break only strands a
+       short first line, so the wrap goes back to being natural. */
+    .kids__break {
+      display: none;
+    }
+  }
+</style>

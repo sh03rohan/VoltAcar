@@ -1,0 +1,142 @@
+---
+/**
+ * A gutter-aligned horizontal track whose cards bleed off the right edge.
+ *
+ * Extracted from the Features slider (#132:515) when the About gallery
+ * (#87:346) turned out to be the same construction — a row far wider than the
+ * 1400 container, starting at the gutter and running past the frame. Only the
+ * cards differ, so they are a slot.
+ *
+ * The track is a real horizontal scroll region by default, which is what the
+ * frames specify and what touch, keyboard and reduced-motion users get. On a
+ * fine pointer with motion allowed the script upgrades it: the section pins
+ * and the track is scrubbed to scroll position, so scrolling down slides the
+ * cards right-to-left and scrolling back up reverses them.
+ *
+ * Children need only their own width and ratio — the flex and snap behaviour
+ * is applied here.
+ */
+interface Props {
+  /** Names the scroll region for assistive tech. */
+  label: string;
+  /**
+   * Where the pin begins, as a ScrollTrigger `start`. Sections shorter than a
+   * viewport want `center center`, or they hang; taller ones pin from the top.
+   */
+  pinStart?: string;
+}
+
+const { label, pinStart = 'center center' } = Astro.props;
+---
+
+<div
+  class="track__viewport"
+  data-scroll-viewport
+  data-pin-start={pinStart}
+  tabindex="0"
+  role="group"
+  aria-label={label}
+>
+  <ul class="track" role="list" data-scroll-track>
+    <slot />
+  </ul>
+</div>
+
+<style>
+  /* The padding sets where the first card starts and where the last one ends;
+     the cards themselves bleed through it to the viewport edge as they move,
+     because `overflow` clips at the padding box, not the content box. */
+  .track__viewport {
+    padding-inline: var(--gutter);
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    /* Without this the snapport starts at the padding box, so the browser
+       scrolls the gutter away on load to align the first card's start edge
+       and card one sits flush to the screen instead of the container. */
+    scroll-padding-inline: var(--gutter);
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .track__viewport::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Set by the script once the pinned version takes over. */
+  .track__viewport[data-pinned] {
+    overflow: hidden;
+    scroll-snap-type: none;
+  }
+
+  .track {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-32);
+    width: max-content;
+    margin: 0;
+    padding: 0;
+    will-change: transform;
+  }
+
+  /* Slotted cards carry the parent's scope, not this component's, so they can
+     only be reached globally. */
+  .track > :global(*) {
+    flex: none;
+    scroll-snap-align: start;
+  }
+</style>
+
+<script>
+  import { gsap, ScrollTrigger, prefersReducedMotion } from '../../scripts/motion';
+
+  /* Touch and coarse pointers keep the native scroll region: a pinned section
+     fights the momentum scrolling they already expect. */
+  const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  const viewports = document.querySelectorAll<HTMLElement>('[data-scroll-viewport]');
+
+  if (finePointer && !prefersReducedMotion() && viewports.length) {
+    /* Every instance sets up independently, so a page may carry more than one. */
+    viewports.forEach((viewport) => {
+      const track = viewport.querySelector<HTMLElement>('[data-scroll-track]');
+      const section = viewport.closest('section');
+      if (!track || !section) return;
+
+      viewport.dataset.pinned = '';
+      // The region no longer scrolls, so it should not be a tab stop either.
+      viewport.removeAttribute('tabindex');
+      viewport.removeAttribute('role');
+      viewport.removeAttribute('aria-label');
+
+      /**
+       * How far the track has to move for the last card to finish flush with
+       * the container's right edge: its full width minus the container's
+       * content box. Read lazily so ScrollTrigger recalculates it on resize
+       * rather than baking in the width at load.
+       */
+      const distance = (): number => {
+        const styles = getComputedStyle(viewport);
+        const inner =
+          viewport.clientWidth - parseFloat(styles.paddingLeft) - parseFloat(styles.paddingRight);
+        return Math.max(0, track.scrollWidth - inner);
+      };
+
+      const travel = gsap.to(track, { x: () => -distance(), ease: 'none' });
+
+      ScrollTrigger.create({
+        trigger: section,
+        start: viewport.dataset.pinStart || 'center center',
+        end: () => `+=${distance()}`,
+        pin: true,
+        // Eases toward the scroll position in both directions rather than
+        // tracking it rigidly.
+        scrub: 0.8,
+        anticipatePin: 1,
+        invalidateOnRefresh: true,
+        animation: travel,
+      });
+    });
+
+    window.addEventListener('resize', () => ScrollTrigger.refresh());
+  }
+</script>
