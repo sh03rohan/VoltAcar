@@ -4,10 +4,13 @@ import Header from '../components/layout/Header.astro';
 import Footer from '../components/layout/Footer.astro';
 import PageHero from '../components/sections/PageHero.astro';
 import MissionStatement from '../components/sections/MissionStatement.astro';
+import FeatureRow from '../components/sections/FeatureRow.astro';
 import Newsletter from '../components/sections/Newsletter.astro';
 import { site } from '../config/site';
 
 import featuresHero from '../assets/images/features-hero.webp';
+import featureRoad from '../assets/images/feature-road.webp';
+import featureCabin from '../assets/images/feature-cabin.webp';
 ---
 
 <BaseLayout
@@ -34,9 +37,28 @@ import featuresHero from '../assets/images/features-hero.webp';
       two alternating blocks, 180 apart with 180 below them. */}
   <div class="features-intro">
     <MissionStatement statement="We are shaping the next generation of electric mobility — crafted for modern cities, everyday lives, and a cleaner future. Our mission is simple: make electric driving accessible, efficient, and human-centered, from compact designs to advanced technology." />
+
+    {/* Figma #129:444 */}
+    <FeatureRow
+      title="Designed for Real Life, Powered by Innovation"
+      body="VoltACar merges advanced electric performance with human-centered design. From everyday commutes to long adventures, every detail is thoughtfully engineered."
+      image={featureRoad}
+      imageAlt="A VoltACar travelling along an open highway at dusk"
+      mediaSide="right"
+      eager
+    />
+
+    {/* Figma #129:450 */}
+    <FeatureRow
+      title="Performance Meets Everyday Life"
+      body="VoltACar delivers intelligent electric mobility with comfort and precision, designed to enhance every journey, near or far."
+      image={featureCabin}
+      imageAlt="The VoltACar cabin looking forward through the panoramic roof to a mountain range"
+      mediaSide="left"
+    />
   </div>
 
-  {/* Remaining Features sections follow in Sub-phase 2.3 onward. */}
+  {/* Remaining Features sections follow in Sub-phase 2.4 onward. */}
 
   {/* Figma #266:15681 — global */}
   <Newsletter />

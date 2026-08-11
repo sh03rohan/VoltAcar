@@ -1,0 +1,191 @@
+---
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+
+/**
+ * Contained media-card row — Figma #129:444 and #129:450 on the Features page.
+ *
+ * Deliberately not `AlternatingBlock`. That band is a full-bleed 1600x780
+ * frame whose render runs to the viewport edge beside a 565px copy column at
+ * 20px body copy with a CTA. This one is a 1400px row inside the gutters: a
+ * fixed 565x700 media card, a 151px gap and a 684px copy column at 16px, with
+ * no CTA. Sharing one component would mean overriding every dimension it has.
+ *
+ *   [684 copy][151][565 card]   or   [565 card][151][684 copy]
+ *
+ * The copy is centred against the card's 700px height. Media renders come
+ * from the card node itself, so each image already carries the frame's crop.
+ */
+interface Props {
+  title: string;
+  body: string;
+  image: ImageMetadata;
+  imageAlt: string;
+  mediaSide?: 'left' | 'right';
+  /** Set on the first row of a page so its render is not lazy-loaded. */
+  eager?: boolean;
+}
+
+const {
+  title,
+  body,
+  image,
+  imageAlt,
+  mediaSide = 'right',
+  eager = false,
+} = Astro.props;
+---
+
+<section class:list={['row', `row--media-${mediaSide}`]} data-feature-row>
+  <div class="container row__inner">
+    <div class="row__media" data-feature-media>
+      <Image
+        class="row__image"
+        src={image}
+        alt={imageAlt}
+        widths={[400, 565, 848, 1130]}
+        sizes="(max-width: 992px) 92vw, 40vw"
+        loading={eager ? 'eager' : 'lazy'}
+        decoding="async"
+      />
+    </div>
+
+    <div class="row__copy">
+      <h2 class="row__title" data-feature-item>{title}</h2>
+      <p class="row__body" data-feature-item>{body}</p>
+    </div>
+  </div>
+</section>
+
+<style>
+  .row__inner {
+    display: flex;
+    align-items: center;
+    /* 151 / 1400 */
+    gap: 10.7857%;
+  }
+
+  /* The media comes first in the DOM so it leads on the stacked layout, which
+     means `row` already puts it on the left and the right-hand variant is the
+     one that reverses. */
+  .row--media-right .row__inner {
+    flex-direction: row-reverse;
+  }
+
+  /* 565 / 1400, holding the frame's card ratio so the row is 700 tall. */
+  .row__media {
+    flex: 0 0 40.357%;
+    aspect-ratio: 565 / 700;
+    border-radius: var(--r-sm);
+    background-color: var(--c-cream);
+    overflow: hidden;
+  }
+
+  .row__image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .row__copy {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-24);
+    flex: 0 0 48.857%; /* 684 / 1400 */
+  }
+
+  .row__title {
+    font-size: var(--fs-h3); /* 52 */
+    font-weight: var(--fw-bold);
+    line-height: var(--lh-tight);
+    color: var(--c-ink);
+  }
+
+  .row__body {
+    font-size: var(--fs-body); /* 16 */
+    line-height: var(--lh-body);
+    color: var(--c-ink);
+  }
+
+  /* ---------- Responsive ---------- */
+
+  /* The 151px gap is a tenth of the row; once the columns get tight it buys
+     nothing, so it collapses before the layout does. */
+  @media (max-width: 1200px) {
+    .row__inner {
+      gap: var(--sp-48);
+    }
+
+    .row__media {
+      flex: 0 0 42%;
+    }
+
+    .row__copy {
+      flex: 1 1 auto;
+    }
+  }
+
+  @media (max-width: 992px) {
+    .row__inner,
+    .row--media-right .row__inner {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .row__media {
+      flex: none;
+      /* A 565x700 portrait is too tall once it spans the full width. */
+      aspect-ratio: 4 / 3;
+      max-height: 32rem;
+    }
+
+    .row__copy {
+      flex: none;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .row__media {
+      aspect-ratio: 3 / 2;
+    }
+  }
+</style>
+
+<script>
+  import { gsap, prefersReducedMotion } from '../../scripts/motion';
+
+  if (!prefersReducedMotion()) {
+    document.querySelectorAll<HTMLElement>('[data-feature-row]').forEach((row) => {
+      const media = row.querySelector<HTMLElement>('[data-feature-media]');
+      const items = row.querySelectorAll('[data-feature-item]');
+
+      const tl = gsap.timeline({
+        defaults: { ease: 'power3.out' },
+        scrollTrigger: { trigger: row, start: 'top 72%', once: true },
+      });
+
+      /* The card is portrait, so it uncovers upward rather than sideways the
+         way the Home bands do — and the render eases out of its own overscale
+         behind the clip, which reads as the card opening onto the scene. */
+      if (media) {
+        tl.fromTo(
+          media,
+          { clipPath: 'inset(100% 0 0 0)' },
+          { clipPath: 'inset(0% 0 0 0)', duration: 1.1 },
+          0,
+        );
+        const img = media.querySelector<HTMLElement>('.row__image');
+        if (img) tl.fromTo(img, { scale: 1.12 }, { scale: 1, duration: 1.4 }, 0);
+      }
+
+      if (items.length) {
+        tl.fromTo(
+          items,
+          { opacity: 0, y: 24 },
+          { opacity: 1, y: 0, duration: 0.7, stagger: 0.12 },
+          0.3,
+        );
+      }
+    });
+  }
+</script>
