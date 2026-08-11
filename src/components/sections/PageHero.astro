@@ -35,6 +35,11 @@ interface Props {
   imageTop?: number;
   /** Focal point once the band is too tall for the proportional crop. */
   imageFocus?: string;
+  /**
+   * Focal point for the narrow layout, where the render becomes a short strip
+   * rather than a full-bleed crop and so wants a different subject anchor.
+   */
+  imageFocusNarrow?: string;
   /** Copy block width and body width, in px, from the frame. */
   copyWidth?: number;
   bodyWidth?: number;
@@ -52,6 +57,7 @@ const {
   imageLeft = 0,
   imageTop = 0,
   imageFocus = '60% 50%',
+  imageFocusNarrow = imageFocus,
   copyWidth = 859,
   bodyWidth = 803,
 } = Astro.props;
@@ -70,6 +76,7 @@ const vars = {
   /* Covers the band even where the proportional crop has become too short. */
   imgMinHeight: `${100 - imageTop}%`,
   imgFocus: imageFocus,
+  imgFocusNarrow: imageFocusNarrow,
   copyWidth: `${copyWidth / 16}rem`,
   bodyWidth: `${bodyWidth / 16}rem`,
 };
@@ -186,16 +193,60 @@ const vars = {
     }
   }
 
+  /* The frame's band is a 2.05:1 landscape crop. Holding its 780px height at
+     phone widths turns the box portrait, and because `cover` scales to the
+     taller edge it then throws away roughly three quarters of the render's
+     width — the car arrives as an unreadable close-up under a lot of dead
+     space.
+
+     Shortening the section alone would not fix that: the crop follows the
+     image box, not the band. So below this breakpoint the section is sized by
+     its copy, and the render becomes a bottom-anchored 4:3 strip masked into
+     the ink behind it. That takes the visible share of the render from ~27%
+     to ~69% while the copy still sits over the photograph. */
   @media (max-width: 768px) {
+    .page-hero {
+      min-height: 30rem;
+    }
+
+    .page-hero__inner {
+      /* The foot padding reserves a clear strip, so the render is never
+         only a backdrop — part of it is always in the open. */
+      padding-block: 7.5rem 13rem;
+    }
+
+    .page-hero__image {
+      top: auto;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: auto;
+      /* Overrides the desktop overhang, which would re-inflate the box. */
+      min-height: 0;
+      aspect-ratio: 4 / 3;
+      object-position: var(--imgFocusNarrow);
+      /* Reaches full strength only at 42%, which is where the car's body
+         starts. The band above it is sky and roof — the brightest part of
+         every render, and exactly what the copy overlaps — so fading it back
+         into the ink buys the contrast without dimming the subject. */
+      -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 42%);
+      mask-image: linear-gradient(to bottom, transparent 0%, #000 42%);
+    }
+
+    /* The radial scrim was measured against the full band and reads far too
+       heavy over a strip, so the narrow layout carries its own vertical wash:
+       dense under the copy, easing off across the exposed foot. */
     .page-hero__scrim {
-      background:
-        linear-gradient(
-          to bottom,
-          rgba(19, 20, 0, 0.8) 0%,
-          rgba(19, 20, 0, 0.5) 50%,
-          rgba(19, 20, 0, 0.7) 100%
-        ),
-        var(--scrim);
+      background: linear-gradient(
+        to bottom,
+        rgba(19, 20, 0, 0.74) 0%,
+        rgba(19, 20, 0, 0.66) 40%,
+        /* The copy runs out around 62%, and the strip's brightest area — sky
+           and windscreen — is right behind it, so the wash only starts
+           releasing past that point. */ rgba(19, 20, 0, 0.6) 62%,
+        rgba(19, 20, 0, 0.12) 82%,
+        rgba(19, 20, 0, 0.4) 100%
+      );
     }
 
     .page-hero__lead {

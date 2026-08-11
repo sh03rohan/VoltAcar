@@ -67,6 +67,11 @@ const stats = [
     display: flex;
     min-height: 50rem; /* 800 */
     color: var(--c-cream);
+    /* The render covers the whole band on desktop, but the narrow layout
+       leaves ink above the strip — without this the scrim would composite
+       over the cream page instead, which is what capped the headline's
+       contrast at 5.4:1. */
+    background-color: var(--c-ink);
     overflow: hidden;
   }
 
@@ -242,35 +247,45 @@ const stats = [
   }
 
   @media (max-width: 768px) {
+    /* Content-driven rather than 100svh. The headline, lead, CTA and four
+       stacked stats already make this the tallest band on the site, so the
+       viewport floor only ever added dead space below the stat row. */
     .hero {
-      min-height: 100svh;
+      min-height: 34rem;
     }
 
     .hero__inner {
-      padding-top: 9rem;
+      padding-top: 7.5rem;
       gap: var(--sp-48);
     }
 
+    /* A full-bleed `cover` in a portrait box scaled the render to the taller
+       edge and cropped it to a wheel and a door. As a bottom-anchored 4:3
+       strip the whole car reads instead, and the mask hands the top of the
+       strip back to the ink the copy sits on. */
     .hero__image {
-      object-position: 62% 45%;
+      inset: auto 0 0;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 4 / 3;
+      object-position: 56% 52%;
+      -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 42%);
+      mask-image: linear-gradient(to bottom, transparent 0%, #000 42%);
     }
 
-    /* On a tall narrow crop the copy sits directly over the car, so the wash
-       becomes vertical instead of directional. */
+    /* The copy sits directly over the car here, so the wash becomes vertical
+       rather than directional — and eases off across the stat row, which the
+       strip now sits behind in the clear. */
     .hero__scrim {
-      background:
-        linear-gradient(
-          to bottom,
-          rgba(19, 20, 0, 0.82) 0%,
-          rgba(19, 20, 0, 0.5) 45%,
-          rgba(19, 20, 0, 0.72) 100%
-        ),
-        radial-gradient(
-          circle at 62% 50%,
-          rgba(19, 20, 0, 0.1) 0%,
-          rgba(19, 20, 0, 0.5) 55%,
-          rgba(19, 20, 0, 0.8) 100%
-        );
+      background: linear-gradient(
+        to bottom,
+        rgba(19, 20, 0, 0.8) 0%,
+        rgba(19, 20, 0, 0.55) 45%,
+        /* Unlike the inner pages nothing here is ever fully in the clear —
+           the stat row runs to the foot — so the wash tightens again over the
+           bottom third rather than releasing. */ rgba(19, 20, 0, 0.6) 70%,
+        rgba(19, 20, 0, 0.72) 100%
+      );
     }
 
     .hero__lead {

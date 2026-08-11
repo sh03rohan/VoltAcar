@@ -1,0 +1,41 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Header from '../components/layout/Header.astro';
+import Footer from '../components/layout/Footer.astro';
+import PageHero from '../components/sections/PageHero.astro';
+import Newsletter from '../components/sections/Newsletter.astro';
+import { site } from '../config/site';
+
+import aboutHero from '../assets/images/about-hero.webp';
+---
+
+<BaseLayout
+  title={`About us | ${site.name}`}
+  description="How VoltACar is redefining electric mobility — innovative, sustainable, and designed for every journey."
+>
+  <Header slot="header" />
+
+  {/* Figma #87:206. The frame stacks a landscape plate and a car render over
+      #131400; both are flattened into one asset at their exact offsets, so the
+      band is a plain 1600x780 image and the scrim stays a responsive CSS layer.
+
+      Radius measured off the exported scrim node (#96:127) — the MCP reports
+      radial fills without one, and farthest-corner would put it at 1386px
+      against a true 848 x 555. */}
+  <PageHero
+    title="About VoltACar and Our Mission"
+    body="Discover how we’re redefining electric mobility — innovative, sustainable, and designed for every journey."
+    image={aboutHero}
+    scrim="radial-gradient(53% 71.15% at 68.75% 59.17%, rgba(19,20,0,0.2) 0%, rgba(19,20,0,0.62) 49%, rgba(19,20,0,0.83) 100%)"
+    imageFocus="72% 50%"
+    imageFocusNarrow="100% 50%"
+    copyWidth={656}
+    bodyWidth={565}
+  />
+
+  {/* Figma #91:572 */}
+  <Newsletter />
+
+  {/* Figma #91:594 */}
+  <Footer slot="footer" />
+</BaseLayout>
