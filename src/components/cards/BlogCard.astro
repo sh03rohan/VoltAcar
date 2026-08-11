@@ -135,11 +135,16 @@ const { title, description, href, cover, coverAlt = '', eager = false } = Astro.
     text-decoration: none;
   }
 
-  /* Hover sweeps the brand yellow across the title rather than underlining
-     it. The gradient is two flat halves on a box twice the text's width, so
-     sliding its position wipes the new colour in from the left — the motion a
-     GSAP tween of `backgroundPosition` produces, without a listener per card,
-     and it still runs if the JS never arrives.
+  /* Hover sweeps a colour across the title rather than underlining it. The
+     gradient is two flat halves on a box twice the text's width, so sliding
+     its position wipes the new colour in from the left — the motion a GSAP
+     tween of `backgroundPosition` produces, without a listener per card, and
+     it still runs if the JS never arrives.
+
+     The fill is --c-muted: it is the only palette colour that both differs
+     from ink and stays legible on cream, at 4.62:1. Brand yellow measures
+     1.01:1 there and steel 2.41:1, so both fail even the 3:1 floor a 36px
+     bold heading gets.
 
      Guarded, because the technique needs transparent text: without the
      support the title would be invisible rather than merely unanimated. */
@@ -154,7 +159,7 @@ const { title, description, href, cover, coverAlt = '', eager = false } = Astro.
     .post__link :global(.post__line) {
       background-image: linear-gradient(
         to right,
-        var(--c-primary) 50%,
+        var(--c-muted) 50%,
         var(--c-ink) 50%
       );
       background-size: 200% 100%;
