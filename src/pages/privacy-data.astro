@@ -7,6 +7,66 @@ import Newsletter from '../components/sections/Newsletter.astro';
 import { site } from '../config/site';
 
 import privacyHero from '../assets/images/privacy-hero.webp';
+
+/**
+ * Figma #73:511 — seven policy sections, heading beside body.
+ *
+ * The copy lives here rather than in a content collection: it is one page a
+ * buyer rewrites once, and a collection would put a schema and a loader
+ * between them and a paragraph. Edit the array.
+ *
+ * Rows 1 and 2 type their bullets as "  - " inside the text node, the same
+ * way #143:748 does on the test drive. Figma renders those as a real list, and
+ * so does this.
+ */
+interface PolicySection {
+  title: string;
+  body: string;
+  items?: string[];
+}
+
+const sections: PolicySection[] = [
+  {
+    title: 'Information we collect when you use our website',
+    body: 'We may collect the following types of information:',
+    items: [
+      'Personal Information: Name, email address, and contact details.',
+      'Vehicle Interests: Details regarding your inquiries or preferences.',
+      'Technical Data: Browser type, device information, and IP address.',
+      'Usage Data: Pages you visit, time spent on the site, and interactions.',
+    ],
+  },
+  {
+    title: 'How and Why We Use Your Information',
+    body: 'We use the information we collect to:',
+    items: [
+      'Respond to Requests: Address inquiries and provide customer support.',
+      'Enhance Offerings: Improve our website, products, and services.',
+      'Share Updates: Deliver important news and updates about our electric vehicles.',
+      'Analyze Usage: Monitor website performance and understand user behavior.',
+    ],
+  },
+  {
+    title: 'Cookies, Analytics and Tracking Technologies',
+    body: 'Our website uses cookies and similar tools to improve your experience and understand how you engage with our content. You can manage your cookie preferences through your browser settings.',
+  },
+  {
+    title: 'How We Store and Protect Your Personal Data',
+    body: 'We implement appropriate technical and organizational measures to safeguard your information from unauthorized access, loss, or misuse. However, no online system can guarantee complete security.',
+  },
+  {
+    title: 'Data Sharing and Third-Party Services',
+    body: 'We do not sell or rent your personal information. Data may be shared with trusted service providers only when necessary to operate our website or deliver services, under strict confidentiality obligations.',
+  },
+  {
+    title: 'User Rights and Control',
+    body: 'You have the right to access, update, or delete your personal information at any time. We offer tools and resources to help you manage your data preferences easily.',
+  },
+  {
+    title: 'Security Measures',
+    body: 'We implement a variety of security protocols to protect your personal information from unauthorized access and data breaches, ensuring your data is safe.',
+  },
+];
 ---
 
 <BaseLayout
@@ -41,9 +101,116 @@ import privacyHero from '../assets/images/privacy-hero.webp';
     copyWash
   />
 
+  {/* Figma #76:97 — the policy block starts 80 below the hero and clears the
+      newsletter by 180. */}
+  <section class="policy" aria-labelledby="policy-title">
+    <h2 class="visually-hidden" id="policy-title">Privacy policy</h2>
+
+    <div class="container">
+      {
+        sections.map((section) => (
+          <section class="policy__row">
+            <h3 class="policy__title">{section.title}</h3>
+
+            <div class="policy__body">
+              <p>{section.body}</p>
+              {section.items && (
+                <ul class="policy__list">
+                  {section.items.map((item) => (
+                    <li>{item}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </section>
+        ))
+      }
+    </div>
+  </section>
+
   {/* Figma #91:572 */}
   <Newsletter />
 
   {/* Figma #91:594 */}
   <Footer slot="footer" />
 </BaseLayout>
+
+<style>
+  .policy {
+    padding-top: var(--section-gap-sm); /* 80 */
+    padding-bottom: var(--section-gap); /* 180 */
+  }
+
+  /* Figma #73:512 and siblings: padding 36 0, gap 120, a 0.5px #84A2BA stroke
+     top *and* bottom. Stacked with no gap, so a junction carries both — which
+     is why the rules are drawn rather than bordered: a Figma stroke sits
+     inside its frame while a CSS border adds to it, and 14 of them would put
+     7px into a 1554 block. */
+  .policy__row {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    /* 120 / 1400 */
+    gap: 8.571%;
+    padding-block: 2.25rem; /* 36 */
+  }
+
+  .policy__row::before,
+  .policy__row::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 0.5px;
+    background-color: var(--c-steel);
+  }
+
+  .policy__row::before {
+    top: 0;
+  }
+
+  .policy__row::after {
+    bottom: 0;
+  }
+
+  /* Both columns are `fill` in the frame, so they halve what the 120 leaves. */
+  .policy__title,
+  .policy__body {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .policy__title {
+    font-size: var(--fs-h4); /* 36 */
+    font-weight: var(--fw-bold);
+    line-height: var(--lh-heading);
+    color: var(--c-ink);
+  }
+
+  .policy__body {
+    font-size: var(--fs-lead); /* 20 */
+    line-height: var(--lh-body);
+    color: var(--c-prose);
+  }
+
+  /* The frame's blank line between the intro and the list is a hard return in
+     the text node; here it is the gap between two blocks. */
+  .policy__list {
+    /* One line of the body's own 20/1.5 — the blank line, exactly. */
+    margin-top: 1.875rem;
+    padding-left: 1.875rem;
+  }
+
+  .policy__list li::marker {
+    color: var(--c-prose);
+  }
+
+  /* A 640 heading beside a 640 body is two columns; below this it is two
+     narrow ones, and the heading stops introducing anything. */
+  @media (max-width: 992px) {
+    .policy__row {
+      flex-direction: column;
+      gap: var(--sp-24);
+    }
+  }
+</style>
