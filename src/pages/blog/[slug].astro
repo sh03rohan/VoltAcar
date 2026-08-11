@@ -7,6 +7,7 @@ import Header from '../../components/layout/Header.astro';
 import Footer from '../../components/layout/Footer.astro';
 import PageHero from '../../components/sections/PageHero.astro';
 import PostBody from '../../components/blog/PostBody.astro';
+import BlogCard from '../../components/cards/BlogCard.astro';
 import Newsletter from '../../components/sections/Newsletter.astro';
 import { site } from '../../config/site';
 
@@ -20,12 +21,32 @@ import blogHero from '../../assets/images/blog-hero.webp';
  * in any case: slugs here, page numbers there.
  */
 export const getStaticPaths: GetStaticPaths = async () => {
-  const posts = await getCollection('blog', ({ data }) => !data.draft);
+  /* Same order as the listing, so "similar" means something a reader can see
+     for themselves rather than a hidden score. */
+  const posts = (await getCollection('blog', ({ data }) => !data.draft)).sort(
+    (a, b) => b.data.publishedAt.valueOf() - a.data.publishedAt.valueOf(),
+  );
 
-  return posts.map((post) => ({ params: { slug: post.id }, props: { post } }));
+  return posts.map((post, i) => ({
+    params: { slug: post.id },
+    props: {
+      post,
+      /* The two that follow, wrapping past the end. The frames carry no tags
+         or categories to match on, and taking the two newest instead would
+         hand almost every post the same pair. Wrapping gives each one a
+         different pair and can never link a post to itself — the filter is
+         for collections of one or two, where the wrap comes back round. */
+      similar: [1, 2]
+        .map((n) => posts[(i + n) % posts.length])
+        .filter((p) => p.id !== post.id),
+    },
+  }));
 };
 
-const { post } = Astro.props as { post: CollectionEntry<'blog'> };
+const { post, similar } = Astro.props as {
+  post: CollectionEntry<'blog'>;
+  similar: CollectionEntry<'blog'>[];
+};
 const { Content } = await render(post);
 ---
 
@@ -65,6 +86,32 @@ const { Content } = await render(post);
     </PostBody>
   </article>
 
+  {/* Figma #85:159 — 180 below the article, 180 above the newsletter. Hidden
+      rather than left empty on a collection too small to fill it. */}
+  {
+    similar.length > 0 && (
+      <section class="similar" aria-labelledby="similar-title">
+        <div class="container">
+          <h2 class="similar__title" id="similar-title">
+            Similar Blog
+          </h2>
+
+          <div class="similar__list">
+            {similar.map((entry) => (
+              <BlogCard
+                title={entry.data.title}
+                description={entry.data.description}
+                href={`/blog/${entry.id}`}
+                cover={entry.data.cover}
+                coverAlt={entry.data.coverAlt}
+              />
+            ))}
+          </div>
+        </div>
+      </section>
+    )
+  }
+
   {/* Figma #91:572 */}
   <Newsletter />
 
@@ -78,5 +125,36 @@ const { Content } = await render(post);
   .post-page {
     padding-top: var(--section-gap-sm); /* 80 */
     padding-bottom: var(--section-gap); /* 180 */
+  }
+
+  .similar {
+    padding-bottom: var(--section-gap); /* 180 */
+  }
+
+  .similar__title {
+    margin-bottom: var(--sp-80);
+    font-size: var(--fs-h2); /* 64 */
+    font-weight: var(--fw-bold);
+    line-height: var(--lh-tight);
+    color: var(--c-ink);
+  }
+
+  /* #85:159 sets 80 between the rows, where the listing's own #237:867 sets
+     none and lets each row's rule do the separating. Two rows read as a pair
+     rather than a list, so the design gives them room. */
+  .similar__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-80);
+  }
+
+  @media (max-width: 992px) {
+    .similar__title {
+      margin-bottom: var(--section-gap-sm);
+    }
+
+    .similar__list {
+      gap: var(--section-gap-sm);
+    }
   }
 </style>
