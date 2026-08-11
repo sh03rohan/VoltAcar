@@ -1,0 +1,191 @@
+---
+/**
+ * Listing pagination — Figma #237:946.
+ *
+ *   wrapper  32 of padding above, full width
+ *   row      #237:947  space-between
+ *   Prev     #237:948  8/20 padding, 1px ink border, radius 100, 16/1em Medium
+ *   numbers  #237:949  2 apart; the current page is a 40x40 bordered pill,
+ *                      the rest are 40x40 at radius 8 with no border in
+ *                      #6E6E68 (#237:950 against #237:952 and siblings)
+ *   Next     #237:961  as Prev
+ *
+ * Prev and Next become spans rather than links at the ends of the range: a
+ * disabled control that is still a link is reachable and still navigates.
+ */
+interface Props {
+  currentPage: number;
+  lastPage: number;
+  /** `undefined` for page 1, `/blog/2` and so on after it. */
+  prevUrl?: string;
+  nextUrl?: string;
+  /** Builds the href for a page number. */
+  hrefFor: (page: number) => string;
+  label?: string;
+}
+
+const {
+  currentPage,
+  lastPage,
+  prevUrl,
+  nextUrl,
+  hrefFor,
+  label = 'Blog pages',
+} = Astro.props;
+
+const pages = Array.from({ length: lastPage }, (_, i) => i + 1);
+---
+
+<nav class="pager" aria-label={label}>
+  <div class="pager__row">
+    {
+      prevUrl ? (
+        <a class="pager__step" href={prevUrl} rel="prev">
+          Prev
+        </a>
+      ) : (
+        <span class="pager__step pager__step--off" aria-hidden="true">
+          Prev
+        </span>
+      )
+    }
+
+    <ol class="pager__numbers">
+      {
+        pages.map((page) => (
+          <li>
+            {page === currentPage ? (
+              <span class="pager__page pager__page--current" aria-current="page">
+                <span class="visually-hidden">Page </span>
+                {page}
+              </span>
+            ) : (
+              <a class="pager__page" href={hrefFor(page)}>
+                <span class="visually-hidden">Page </span>
+                {page}
+              </a>
+            )}
+          </li>
+        ))
+      }
+    </ol>
+
+    {
+      nextUrl ? (
+        <a class="pager__step" href={nextUrl} rel="next">
+          Next
+        </a>
+      ) : (
+        <span class="pager__step pager__step--off" aria-hidden="true">
+          Next
+        </span>
+      )
+    }
+  </div>
+</nav>
+
+<style>
+  /* Figma: 32 above, and the row spans the container. */
+  .pager {
+    padding-top: var(--sp-32);
+  }
+
+  .pager__row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--sp-16);
+  }
+
+  .pager__step {
+    display: inline-flex;
+    align-items: center;
+    height: 40px;
+    padding-inline: var(--sp-20);
+    border: 1px solid var(--c-ink);
+    border-radius: var(--r-pill);
+    font-size: var(--fs-body); /* 16 */
+    font-weight: var(--fw-medium);
+    line-height: 1;
+    color: var(--c-ink);
+    text-decoration: none;
+    transition:
+      background-color var(--dur) var(--ease-out),
+      color var(--dur) var(--ease-out);
+  }
+
+  .pager__step:hover,
+  .pager__step:focus-visible {
+    background-color: var(--c-ink);
+    color: var(--c-primary);
+  }
+
+  /* At the ends of the range the control stays in place so the row keeps its
+     space-between geometry, but it is inert and hidden from assistive tech. */
+  .pager__step--off {
+    border-color: var(--c-steel);
+    color: var(--c-muted);
+    opacity: 0.55;
+    pointer-events: none;
+  }
+
+  .pager__numbers {
+    display: flex;
+    gap: 2px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* Figma #237:952: 40x40 at radius 8, muted, no border. */
+  .pager__page {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border: 1px solid transparent;
+    border-radius: var(--r-md); /* 8 */
+    font-size: var(--fs-body);
+    line-height: var(--lh-body);
+    color: var(--c-muted);
+    text-decoration: none;
+    transition:
+      background-color var(--dur) var(--ease-out),
+      color var(--dur) var(--ease-out);
+  }
+
+  .pager__page:hover,
+  .pager__page:focus-visible {
+    background-color: var(--c-white);
+    color: var(--c-ink);
+  }
+
+  /* Figma #237:950: the current page is the outlined pill. */
+  .pager__page--current {
+    border-color: var(--c-ink);
+    border-radius: var(--r-pill);
+    color: var(--c-ink);
+  }
+
+  @media (max-width: 600px) {
+    .pager__row {
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: var(--sp-12);
+    }
+
+    /* The numbers lead on a wrapped row; the steps sit under them. */
+    .pager__numbers {
+      order: -1;
+      flex-basis: 100%;
+      justify-content: center;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .pager__step,
+    .pager__page {
+      transition: none;
+    }
+  }
+</style>

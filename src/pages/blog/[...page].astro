@@ -1,25 +1,50 @@
 ---
-import BaseLayout from '../layouts/BaseLayout.astro';
-import Header from '../components/layout/Header.astro';
-import Footer from '../components/layout/Footer.astro';
-import PageHero from '../components/sections/PageHero.astro';
-import Newsletter from '../components/sections/Newsletter.astro';
-import Button from '../components/common/Button.astro';
-import BlogCard from '../components/cards/BlogCard.astro';
-import { site } from '../config/site';
+import type { GetStaticPaths, Page } from 'astro';
+import type { CollectionEntry } from 'astro:content';
 import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Header from '../../components/layout/Header.astro';
+import Footer from '../../components/layout/Footer.astro';
+import PageHero from '../../components/sections/PageHero.astro';
+import Newsletter from '../../components/sections/Newsletter.astro';
+import Button from '../../components/common/Button.astro';
+import BlogCard from '../../components/cards/BlogCard.astro';
+import Pagination from '../../components/navigation/Pagination.astro';
+import { site, postsPerPage } from '../../config/site';
 
-import blogHero from '../assets/images/blog-hero.webp';
+import blogHero from '../../assets/images/blog-hero.webp';
 
-/* Newest first. The frames carry no date, so `publishedAt` exists purely to
-   make this order deterministic — see src/content.config.ts. */
-const posts = (await getCollection('blog', ({ data }) => !data.draft)).sort(
-  (a, b) => b.data.publishedAt.valueOf() - a.data.publishedAt.valueOf(),
-);
+/**
+ * `/blog`, then `/blog/2` and so on. A rest parameter is what lets the first
+ * page keep the bare path rather than being pushed to `/blog/1`.
+ *
+ * Phase 5 adds `blog/[slug].astro` beside this. There is no collision: Astro
+ * ranks a named parameter above a rest parameter, and in any case the two
+ * generate disjoint sets — slugs here, page numbers there.
+ */
+export const getStaticPaths: GetStaticPaths = async ({ paginate }) => {
+  /* Newest first. The frames carry no date, so `publishedAt` exists purely to
+     make this order deterministic — see src/content.config.ts. */
+  const posts = (await getCollection('blog', ({ data }) => !data.draft)).sort(
+    (a, b) => b.data.publishedAt.valueOf() - a.data.publishedAt.valueOf(),
+  );
+
+  return paginate(posts, { pageSize: postsPerPage });
+};
+
+const { page } = Astro.props as { page: Page<CollectionEntry<'blog'>> };
+const posts = page.data;
+
+/* Page 1 is `/blog`, so it cannot be built by appending a number. */
+const hrefFor = (n: number) => (n === 1 ? '/blog' : `/blog/${n}`);
 ---
 
+{/* Later pages are the same listing, so they say so rather than competing
+    with page 1 for the same title. */}
 <BaseLayout
-  title={`Blog | ${site.name}`}
+  title={page.currentPage === 1
+    ? `Blog | ${site.name}`
+    : `Blog — page ${page.currentPage} | ${site.name}`}
   description="News, insights and updates from VoltACar about electric vehicles, sustainable transportation, and the future of driving."
 >
   <Header slot="header" />
@@ -74,6 +99,20 @@ const posts = (await getCollection('blog', ({ data }) => !data.draft)).sort(
             here. If you were expecting posts, restart the dev server — the content collection is
             read at startup.
           </p>
+        )
+      }
+
+      {/* Figma #237:946. Hidden on a single page: a pager whose only control
+          is the page you are already on is noise. */}
+      {
+        page.lastPage > 1 && (
+          <Pagination
+            currentPage={page.currentPage}
+            lastPage={page.lastPage}
+            prevUrl={page.url.prev}
+            nextUrl={page.url.next}
+            hrefFor={hrefFor}
+          />
         )
       }
     </div>

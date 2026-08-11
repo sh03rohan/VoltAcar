@@ -102,5 +102,12 @@ export const forms = {
   testDrive: '',
 } as const;
 
-/** Number of blog posts per page on /blog. */
+/**
+ * Posts per page on /blog.
+ *
+ * 6 is what the Figma listing shows (#237:866). That frame also draws four
+ * page numbers, so the design assumes rather more than six posts exist — with
+ * only the six that ship here there is a single page and the pager hides
+ * itself. Lower this to see it working, or raise it once you have more.
+ */
 export const postsPerPage = 6;
