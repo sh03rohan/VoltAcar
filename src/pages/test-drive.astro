@@ -1,0 +1,41 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Header from '../components/layout/Header.astro';
+import Footer from '../components/layout/Footer.astro';
+import PageHero from '../components/sections/PageHero.astro';
+import Newsletter from '../components/sections/Newsletter.astro';
+import { site } from '../config/site';
+
+import driveHero from '../assets/images/test-drive-hero.webp';
+---
+
+<BaseLayout
+  title={`Book a Demo Drive | ${site.name}`}
+  description="Book your demo drive today and feel the innovation, comfort, and performance of our electric vehicles firsthand."
+>
+  <Header slot="header" />
+
+  {/* Figma #115:115. One plate this time, not two, placed at the frame's own
+      offsets. The scrim rect (#115:117) sits at y=-46 of the band and is 829
+      tall, so its measured radius is restated here against the 780. */}
+  <PageHero
+    title="Experience the Future of Driving"
+    body="Book your demo drive today and feel the innovation, comfort, and performance of our electric vehicles firsthand."
+    image={driveHero}
+    scrim="radial-gradient(53.8% 61.67% at 72.45% 67.91%, rgba(19,20,0,0) 0%, rgba(19,20,0,0.43) 39%, rgba(19,20,0,0.83) 100%)"
+    imageWidth={114.9375}
+    imageLeft={-14.9375}
+    imageTop={-14.1026}
+    imageFocus="52% 50%"
+    imageFocusNarrow="62% 50%"
+    copyWidth={879}
+    titleWidth={648}
+    bodyWidth={565}
+  />
+
+  {/* Figma #91:572 */}
+  <Newsletter />
+
+  {/* Figma #91:594 */}
+  <Footer slot="footer" />
+</BaseLayout>

@@ -46,9 +46,10 @@ interface Props {
   copyWidth?: number;
   bodyWidth?: number;
   /**
-   * Heading measure, where the frame lets it run past the copy block. On the
-   * blog single the text box is 1102 inside a 1042 column, and the 60 is load
-   * bearing: at 1042 the title takes a third line.
+   * Heading measure, where the frame gives it one of its own. It runs either
+   * way: 1102 inside a 1042 column on the blog single (#83:536), 648 inside
+   * an 879 one on the test drive (#115:119). Both are load bearing — each
+   * changes where the title breaks.
    */
   titleWidth?: number;
   /**
@@ -204,10 +205,10 @@ const vars = {
     flex-direction: column;
     align-items: flex-start;
     gap: var(--sp-24);
-    /* The heading is the widest thing in the column, so it sets the column.
-       Anything measured against the narrower copy block subtracts the
-       difference back off — see `--lead-inset`. */
-    max-width: var(--titleWidth);
+    /* Whichever of the two is wider sets the column; the narrower one caps
+       itself. That way a heading may run past the copy block, or sit inside
+       it, without either case needing its own rule. */
+    max-width: max(var(--copyWidth), var(--titleWidth));
   }
 
   .page-hero__head {
@@ -228,6 +229,7 @@ const vars = {
   }
 
   .page-hero__title {
+    max-width: var(--titleWidth);
     font-size: var(--fs-h1);
     font-weight: var(--fw-bold);
     line-height: var(--lh-tight);
