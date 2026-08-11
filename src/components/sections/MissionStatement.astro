@@ -1,0 +1,86 @@
+---
+/**
+ * Centred mission statement — Figma #126:295 on the Features page.
+ *
+ * A single 1162px paragraph at 36/1.3 Regular, centred on the 1400 container
+ * and sitting 80px below the top of its band. Distinct from the Home mission
+ * band (#69:316), which is a two-column layout with a side note and a CTA.
+ */
+interface Props {
+  statement: string;
+  /** Paragraph width from the frame, in px. */
+  width?: number;
+}
+
+const { statement, width = 1162 } = Astro.props;
+---
+
+<section class="statement" data-statement>
+  <div class="container">
+    <p class="statement__text" style={`max-width:${width / 16}rem`} data-statement-text>
+      {statement}
+    </p>
+  </div>
+</section>
+
+<style>
+  .statement {
+    /* Figma: 80 below the band's top edge. */
+    padding-top: var(--section-gap-sm);
+  }
+
+  .statement__text {
+    margin-inline: auto;
+    font-size: var(--fs-h4); /* 36 */
+    font-weight: var(--fw-regular);
+    line-height: var(--lh-heading); /* 1.3 */
+    color: var(--c-ink);
+    text-align: center;
+
+    /* Revealed by wiping the mask downward, so the lines arrive in reading
+       order. Kept on the whole paragraph rather than split into spans, which
+       would make each word an unbreakable box and change the line breaks.
+       Defaults to fully visible without JS. */
+    --reveal: 120%;
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      #000 0%,
+      #000 var(--reveal),
+      transparent calc(var(--reveal) + 18%)
+    );
+    mask-image: linear-gradient(
+      to bottom,
+      #000 0%,
+      #000 var(--reveal),
+      transparent calc(var(--reveal) + 18%)
+    );
+  }
+
+  /* The frame's 36px is a comfortable measure at 1162 but not at a phone
+     width, where --fs-h4's own floor already takes it to 28. */
+  @media (max-width: 768px) {
+    .statement__text {
+      text-align: left;
+    }
+  }
+</style>
+
+<script>
+  import { gsap, prefersReducedMotion } from '../../scripts/motion';
+
+  const section = document.querySelector<HTMLElement>('[data-statement]');
+  const text = section?.querySelector<HTMLElement>('[data-statement-text]');
+
+  if (section && text && !prefersReducedMotion()) {
+    gsap.fromTo(
+      text,
+      { '--reveal': '-18%' },
+      {
+        '--reveal': '120%',
+        duration: 1.5,
+        ease: 'power2.inOut',
+        scrollTrigger: { trigger: section, start: 'top 78%', once: true },
+      },
+    );
+  }
+</script>
