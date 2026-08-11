@@ -6,12 +6,62 @@ import PageHero from '../components/sections/PageHero.astro';
 import MissionStatement from '../components/sections/MissionStatement.astro';
 import FeatureRow from '../components/sections/FeatureRow.astro';
 import FeatureSlider from '../components/sections/FeatureSlider.astro';
+import QuoteBand from '../components/sections/QuoteBand.astro';
+import CarHotspots from '../components/sections/CarHotspots.astro';
+import CtaSlider, { type CtaCard } from '../components/sections/CtaSlider.astro';
 import Newsletter from '../components/sections/Newsletter.astro';
 import { site } from '../config/site';
 
 import featuresHero from '../assets/images/features-hero.webp';
 import featureRoad from '../assets/images/feature-road.webp';
 import featureCabin from '../assets/images/feature-cabin.webp';
+import ctaMountain from '../assets/images/cta-mountain.webp';
+import ctaStreet from '../assets/images/cta-street.webp';
+import ctaGarage from '../assets/images/cta-garage.webp';
+
+/* The band on the page (#128:429) plus the two canvas variants beside the
+   frame, "405" (#143:729) and "406" (#143:737). All three carry the same
+   heading; the first sits its copy at the foot, the other two split it.
+
+   Scrim radii are measured off each exported scrim node — the MCP reports
+   these fills without a radius and CSS would otherwise default to
+   farthest-corner, washing the cards out. */
+const ctaCards: CtaCard[] = [
+  {
+    title: 'Designed for ',
+    titleAccent: 'Real Life, Powered',
+    titleTrail: ' by Innovation',
+    body: 'VoltACar combines cutting‑edge electric performance with human‑first design. From daily commutes to long journeys, every detail is engineered ',
+    image: ctaMountain,
+    alt: 'A VoltACar charging at a roadside post below a mountain range',
+    align: 'foot',
+    scrim:
+      'radial-gradient(70.94% 78.85% at 85.01% 78.7%, rgba(19,20,0,0) 0%, rgba(19,20,0,0.34) 78%, rgba(19,20,0,0.59) 100%)',
+    bodyWidth: 445,
+  },
+  {
+    title: 'Designed for ',
+    titleAccent: 'Real Life, Powered',
+    titleTrail: ' by Innovation',
+    body: 'VoltACar combines cutting‑edge electric performance with human‑first design. From daily commutes to long journeys, every detail is engineered ',
+    image: ctaStreet,
+    alt: 'A VoltACar at a charging post on a tree-lined city street',
+    scrim:
+      'radial-gradient(66.56% 159.62% at 101% 98%, rgba(19,20,0,0) 0%, rgba(19,20,0,0.39) 51%, rgba(19,20,0,0.78) 100%)',
+    bodyWidth: 445,
+  },
+  {
+    title: 'Designed for ',
+    titleAccent: 'Real Life, Powered',
+    titleTrail: ' by Innovation',
+    body: 'VoltACar combines cutting‑edge electric performance with human‑first design. From daily commutes to long journeys, every detail is engineered ',
+    image: ctaGarage,
+    alt: 'A VoltACar parked beside a wall-mounted charger in a covered bay',
+    scrim:
+      'radial-gradient(80.63% 205.13% at 101% 100%, rgba(19,20,0,0) 0%, rgba(19,20,0,0.39) 69%, rgba(19,20,0,0.78) 100%)',
+    bodyWidth: 445,
+  },
+];
 ---
 
 <BaseLayout
@@ -62,7 +112,18 @@ import featureCabin from '../assets/images/feature-cabin.webp';
   {/* Figma #132:515 — the frame marks this track overflowScroll:["x"] */}
   <FeatureSlider />
 
-  {/* Remaining Features sections follow in Sub-phase 2.5 onward. */}
+  {/* Figma #128:369 — the Home band (#167:176) with this page's copy */}
+  <QuoteBand
+    quote="We are building the next generation of electric mobility — designed for modern cities, everyday people, and a cleaner future. Our mission is simple: make electric driving accessible, efficient, and human-friendly. From compact design"
+    attribution="RJ Scaringe – Founder and CEO"
+  />
+
+  {/* Figma #143:689 — the Home diagram (#48:60) unchanged */}
+  <CarHotspots />
+
+  {/* Figma #128:429 with canvas variants #143:729 and #143:737 — the Home
+      pinned slider carrying this page's three cards. */}
+  <CtaSlider cards={ctaCards} label="Designed for real life" />
 
   {/* Figma #266:15681 — global */}
   <Newsletter />

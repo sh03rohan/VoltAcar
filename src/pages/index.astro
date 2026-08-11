@@ -8,13 +8,50 @@ import AlternatingBlock from '../components/sections/AlternatingBlock.astro';
 import CarHotspots from '../components/sections/CarHotspots.astro';
 import QuoteBand from '../components/sections/QuoteBand.astro';
 import InteriorFeatures from '../components/sections/InteriorFeatures.astro';
-import CtaSlider from '../components/sections/CtaSlider.astro';
+import CtaSlider, { type CtaCard } from '../components/sections/CtaSlider.astro';
 import Newsletter from '../components/sections/Newsletter.astro';
 import { site } from '../config/site';
 
 import featureAutonomous from '../assets/images/feature-autonomous.webp';
 import featureCharging from '../assets/images/feature-charging.webp';
 import featureRange from '../assets/images/feature-range.webp';
+import ctaRemote from '../assets/images/cta-remote.webp';
+import ctaHomeImg from '../assets/images/cta-home.webp';
+import ctaRoadside from '../assets/images/cta-roadside.webp';
+
+/* Figma cards "1" (#37:40), "2" (#55:139) and "3" (#55:91). */
+const ctaCards: CtaCard[] = [
+  {
+    title: 'Power Up',
+    breakAfterTitle: true,
+    titleAccent: 'Anywhere, Anytime',
+    body: 'Even in remote locations like hills or scenic spots, our network keeps your car charged and ready.',
+    image: ctaRemote,
+    alt: 'A VoltACar charging at a station on a mountain ridge',
+    scrim:
+      'radial-gradient(circle at 85% 79%, rgba(19,20,0,0) 0%, rgba(19,20,0,0.34) 78%, rgba(19,20,0,0.59) 100%)',
+  },
+  {
+    title: 'Charge',
+    breakAfterTitle: true,
+    titleAccent: 'Comfortably at Home',
+    body: 'Plug in overnight and wake up to a full battery, ready for a day of driving.',
+    image: ctaHomeImg,
+    alt: 'A VoltACar charging on a driveway beside a home wallbox',
+    scrim:
+      'radial-gradient(circle at 101% 100%, rgba(19,20,0,0) 0%, rgba(19,20,0,0.39) 69%, rgba(19,20,0,0.78) 100%)',
+  },
+  {
+    title: 'Fast',
+    breakAfterTitle: true,
+    titleAccent: 'Charging on the Go',
+    body: 'Convenient roadside stations let you recharge quickly, keeping your journey smooth and uninterrupted.',
+    image: ctaRoadside,
+    alt: 'A VoltACar at a roadside charging point in a city square',
+    scrim:
+      'radial-gradient(circle at 101% 98%, rgba(19,20,0,0) 0%, rgba(19,20,0,0.39) 51%, rgba(19,20,0,0.78) 100%)',
+  },
+];
 ---
 
 <BaseLayout title={site.name} description={site.description}>
@@ -75,7 +112,7 @@ import featureRange from '../assets/images/feature-range.webp';
   <InteriorFeatures />
 
   {/* Figma cards #37:40, #55:139, #55:91 — pinned horizontal slider */}
-  <CtaSlider />
+  <CtaSlider cards={ctaCards} />
 
   {/* Figma #91:572 — shared with every other content page */}
   <Newsletter />
