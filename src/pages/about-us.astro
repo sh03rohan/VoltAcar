@@ -6,10 +6,13 @@ import PageHero from '../components/sections/PageHero.astro';
 import MissionStatement from '../components/sections/MissionStatement.astro';
 import KidsSafety from '../components/sections/KidsSafety.astro';
 import QuoteBand from '../components/sections/QuoteBand.astro';
+import FeatureRow from '../components/sections/FeatureRow.astro';
 import Newsletter from '../components/sections/Newsletter.astro';
 import { site } from '../config/site';
 
 import aboutHero from '../assets/images/about-hero.webp';
+import visionImg from '../assets/images/vision.webp';
+import missionImg from '../assets/images/mission.webp';
 ---
 
 <BaseLayout
@@ -53,9 +56,47 @@ import aboutHero from '../assets/images/about-hero.webp';
     attribution="John Sans, Founder & CEO"
   />
 
+  {/* Figma #129:442 — the two Features rows (#129:444/#129:450) with this
+      page's copy. Same 1400 row, same 565x700 card, same 151 gap. Unlike
+      Features the body is held to 565 rather than filling the 684 column, and
+      the two rows sit 80 apart rather than 180. */}
+  <div class="about-purpose">
+    {/* Figma #99:158 */}
+    <FeatureRow
+      title="Our Vision"
+      body="To create a world where sustainable, intelligent, and accessible electric mobility transforms everyday journeys, making cities cleaner, driving safer, and innovation a part of every ride."
+      image={visionImg}
+      imageAlt="A VoltACar lit from above in a clean studio setting"
+      mediaSide="right"
+      bodyWidth={565}
+    />
+
+    {/* Figma #99:159 */}
+    <FeatureRow
+      title="Our Mission"
+      body="To deliver innovative, safe, and sustainable electric vehicles that make everyday driving efficient, enjoyable, and accessible for everyone."
+      image={missionImg}
+      imageAlt="A VoltACar parked in calm natural surroundings"
+      mediaSide="left"
+      bodyWidth={565}
+    />
+  </div>
+
   {/* Figma #91:572 */}
   <Newsletter />
 
   {/* Figma #91:594 */}
   <Footer slot="footer" />
 </BaseLayout>
+
+<style>
+  /* Figma #129:442: 180 of cream above the pair, then only 80 between the two
+     rows and 80 below — a tighter rhythm than the 180 the page uses elsewhere,
+     which is what groups them as one statement. */
+  .about-purpose {
+    display: flex;
+    flex-direction: column;
+    gap: var(--section-gap-sm);
+    margin-block: var(--section-gap) var(--section-gap-sm);
+  }
+</style>

@@ -3,7 +3,8 @@ import { Image } from 'astro:assets';
 import type { ImageMetadata } from 'astro';
 
 /**
- * Contained media-card row — Figma #129:444 and #129:450 on the Features page.
+ * Contained media-card row — Figma #129:444 and #129:450 on the Features page,
+ * reused as #99:158 and #99:159 (Our Vision / Our Mission) on About.
  *
  * Deliberately not `AlternatingBlock`. That band is a full-bleed 1600x780
  * frame whose render runs to the viewport edge beside a 565px copy column at
@@ -22,6 +23,12 @@ interface Props {
   image: ImageMetadata;
   imageAlt: string;
   mediaSide?: 'left' | 'right';
+  /**
+   * Body measure in px, where the frame sets one narrower than the column.
+   * Features lets the body fill all 684; About holds it to 565, which is what
+   * gives those rows their designed line breaks.
+   */
+  bodyWidth?: number;
   /** Set on the first row of a page so its render is not lazy-loaded. */
   eager?: boolean;
 }
@@ -32,6 +39,7 @@ const {
   image,
   imageAlt,
   mediaSide = 'right',
+  bodyWidth,
   eager = false,
 } = Astro.props;
 ---
@@ -52,7 +60,13 @@ const {
 
     <div class="row__copy">
       <h2 class="row__title" data-feature-item>{title}</h2>
-      <p class="row__body" data-feature-item>{body}</p>
+      <p
+        class="row__body"
+        style={bodyWidth ? `max-width:${bodyWidth / 16}rem` : undefined}
+        data-feature-item
+      >
+        {body}
+      </p>
     </div>
   </div>
 </section>
