@@ -185,11 +185,42 @@ const {
       max-width: 26rem;
     }
 
-    /* A 2.05 band is too shallow for a 36px heading plus body once the
-       gutters close in. */
+    /* The frame's 2.05 band is too shallow for a 36px heading plus body once
+       the gutters close in, but a fixed portrait ratio overcorrects: `cover`
+       scales the render to the taller edge, so a 3:4 box showed barely a third
+       of its width and stood 1024px tall at 768. Sizing to the copy with a
+       floor keeps the card tall enough to read and short enough to show the
+       render — roughly 56% of its width rather than 36%. */
     .panel--band {
-      aspect-ratio: 3 / 4;
-      min-height: 0;
+      /* Flex, because dropping the ratio leaves the panel's height indefinite
+         and the content's `height: 100%` no longer resolves — which silently
+         drops the foot alignment and floats the copy to the top. */
+      display: flex;
+      aspect-ratio: auto;
+      min-height: 25rem;
+    }
+
+    .panel--band .panel__content {
+      flex: 1 1 auto;
+      height: auto;
+    }
+
+    /* Each card's radial scrim is measured against the 1600x780 frame, where
+       the copy sits over the dark side of the render. The 3:4 crop swings a
+       brighter part of the scene underneath it — on About that is a sunlit
+       hillside, which took the heading down to 2.56:1. The scrim's background
+       is set inline from the prop, so the foot wash layers over it. */
+    .panel--band .panel__scrim::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        to bottom,
+        rgba(19, 20, 0, 0) 0%,
+        rgba(19, 20, 0, 0.52) 24%,
+        rgba(19, 20, 0, 0.62) 60%,
+        rgba(19, 20, 0, 0.74) 100%
+      );
     }
   }
 

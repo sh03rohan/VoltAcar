@@ -7,12 +7,15 @@ import MissionStatement from '../components/sections/MissionStatement.astro';
 import KidsSafety from '../components/sections/KidsSafety.astro';
 import QuoteBand from '../components/sections/QuoteBand.astro';
 import FeatureRow from '../components/sections/FeatureRow.astro';
+import CtaBanner from '../components/sections/CtaBanner.astro';
+import MeetTheTeam from '../components/sections/MeetTheTeam.astro';
 import Newsletter from '../components/sections/Newsletter.astro';
 import { site } from '../config/site';
 
 import aboutHero from '../assets/images/about-hero.webp';
 import visionImg from '../assets/images/vision.webp';
 import missionImg from '../assets/images/mission.webp';
+import aboutCta from '../assets/images/about-cta.webp';
 ---
 
 <BaseLayout
@@ -81,6 +84,29 @@ import missionImg from '../assets/images/mission.webp';
       bodyWidth={565}
     />
   </div>
+
+  {/* Figma #148:769 — a standalone band, not a slider: this page carries one
+      card and the frame has no variants beside it. Copy sits at the foot of
+      the 807x620 block, which is the `foot` align CtaBanner already has.
+
+      Radius measured off the exported scrim node (#148:771) — 802 x 692
+      against the ~1300 CSS would have assumed. */}
+  <CtaBanner
+    layout="band"
+    align="foot"
+    title="Engineered for "
+    titleAccent="Modern Life, Fueled"
+    titleTrail=" by Innovation"
+    body="Shaping a cleaner, safer, and smarter future through innovative electric mobility for every journey."
+    image={aboutCta}
+    alt="A VoltACar seen from the rear three-quarter against a dark backdrop"
+    scrim="radial-gradient(50.13% 88.74% at 93.83% 73.94%, rgba(19,20,0,0) 0%, rgba(19,20,0,0.34) 58%, rgba(19,20,0,0.59) 100%)"
+    titleWidth={807}
+    bodyWidth={445}
+  />
+
+  {/* Figma #103:189 — white band, six lime cards, detail on hover/focus */}
+  <MeetTheTeam />
 
   {/* Figma #91:572 */}
   <Newsletter />
