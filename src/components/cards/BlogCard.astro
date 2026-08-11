@@ -1,0 +1,245 @@
+---
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+import Icon from '../common/Icon.astro';
+
+/**
+ * Article row — Figma #237:868 and siblings on the blog listing, reused for
+ * "Similar Blog" on the single post (#263:982, #263:995).
+ *
+ *   row     padding 32 0, gap 148, centred, 0.5px #84A2BA under it
+ *   media   565x340, radius 4
+ *   copy    687 wide, stretched to the row and split top-and-bottom: the
+ *           title and standfirst 16 apart at the top, the pill at the foot
+ *
+ * 565 + 148 + 687 is exactly the 1400 container.
+ *
+ * The whole row is one link: the title carries it and a stretched
+ * pseudo-element covers the row, so there is a single tab stop whose
+ * accessible name is the post title. The "Read more" pill is deliberately not
+ * a second link to the same place — it is a span, which is also why it does
+ * not reuse Button. At 32px tall around a 24px circle, on cream that matches
+ * the page, it shares almost nothing with that component but the idea.
+ */
+interface Props {
+  title: string;
+  description: string;
+  href: string;
+  cover: ImageMetadata;
+  coverAlt?: string;
+  /** Set on the first row of a page so its render is not lazy-loaded. */
+  eager?: boolean;
+}
+
+const { title, description, href, cover, coverAlt = '', eager = false } = Astro.props;
+---
+
+<article class="post">
+  <div class="post__media">
+    <Image
+      class="post__image"
+      src={cover}
+      alt={coverAlt}
+      widths={[400, 565, 848, 1130]}
+      sizes="(max-width: 992px) 92vw, 565px"
+      loading={eager ? 'eager' : 'lazy'}
+      decoding="async"
+    />
+  </div>
+
+  <div class="post__copy">
+    <div class="post__text">
+      <h3 class="post__title">
+        <a class="post__link" href={href}>{title}</a>
+      </h3>
+      <p class="post__excerpt">{description}</p>
+    </div>
+
+    <span class="post__more">
+      Read more
+      <span class="post__more-icon"><Icon name="arrow" size={16} /></span>
+    </span>
+  </div>
+</article>
+
+<style>
+  .post {
+    position: relative;
+    display: flex;
+    align-items: center;
+    /* 148 / 1400 */
+    gap: 10.571%;
+    padding-block: var(--sp-32);
+  }
+
+  /* The rule is drawn rather than bordered: Figma strokes sit inside the
+     frame, so a real border-bottom adds its 0.5px to the row's 404 and the
+     error compounds down a six-row list. */
+  .post::before {
+    content: '';
+    position: absolute;
+    inset: auto 0 0;
+    height: 0.5px;
+    background-color: var(--c-steel);
+  }
+
+  /* 565 / 1400, holding the frame's card ratio. */
+  .post__media {
+    flex: 0 0 40.357%;
+    aspect-ratio: 565 / 340;
+    border-radius: var(--r-sm);
+    background-color: var(--c-white);
+    overflow: hidden;
+  }
+
+  .post__image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  /* 687 / 1400. Stretched to the media's height and split, which is what puts
+     the pill on the row's baseline rather than under the standfirst. */
+  .post__copy {
+    display: flex;
+    flex: 0 0 49.071%;
+    flex-direction: column;
+    justify-content: space-between;
+    align-self: stretch;
+  }
+
+  .post__text {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-16);
+  }
+
+  /* The frame sets this box to 476 on the first row and lets the other five
+     fill all 687 — an override with no counterpart in content, so it cannot
+     come from the collection. What the frame actually renders is six two-line
+     headings, and a single 600 measure reproduces that: it is under the first
+     title's 614px natural width, so that one breaks, and wide enough that the
+     longest still fits two lines. It is also a saner heading measure than 687
+     for titles a buyer will write themselves. */
+  .post__title {
+    max-width: 37.5rem; /* 600 */
+    font-size: var(--fs-h4); /* 36 */
+    font-weight: var(--fw-bold);
+    line-height: var(--lh-heading);
+    color: var(--c-ink);
+  }
+
+  .post__link {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  /* Carries the click for the whole row, so the pill and the render are both
+     live without being separate tab stops. */
+  .post__link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
+
+  .post__excerpt {
+    font-size: var(--fs-lead); /* 20 */
+    line-height: var(--lh-body);
+    color: var(--c-muted);
+  }
+
+  /* Figma #237:875: padding 4/4/4/8, gap 12, on #F4F3EF — the page's own
+     colour, so only the lime circle reads. */
+  .post__more {
+    display: inline-flex;
+    align-self: flex-start;
+    align-items: center;
+    gap: var(--sp-12);
+    padding: 4px 4px 4px var(--sp-8);
+    border-radius: var(--r-pill);
+    background-color: var(--c-cream);
+    font-size: var(--fs-body);
+    font-weight: var(--fw-semibold);
+    line-height: var(--lh-body);
+    color: var(--c-ink);
+  }
+
+  .post__more-icon {
+    display: grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    border-radius: var(--r-pill);
+    background-color: var(--c-primary);
+    color: var(--c-ink);
+    transition: transform 0.25s var(--ease-out, ease);
+  }
+
+  /* ---------- Hover / focus ---------- */
+
+  @media (hover: hover) {
+    .post:hover .post__image {
+      transform: scale(1.04);
+    }
+
+    .post:hover .post__more-icon {
+      transform: translateX(3px);
+    }
+
+    .post:hover .post__link {
+      text-decoration: underline;
+      text-underline-offset: 4px;
+    }
+  }
+
+  .post__link:focus-visible {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+
+  /* ---------- Responsive ---------- */
+
+  /* The 148 gap is a tenth of the row; once the columns tighten it buys
+     nothing, so it collapses before the layout does. */
+  @media (max-width: 1200px) {
+    .post {
+      gap: var(--sp-48);
+    }
+
+    .post__media {
+      flex: 0 0 42%;
+    }
+
+    .post__copy {
+      flex: 1 1 auto;
+    }
+  }
+
+  @media (max-width: 992px) {
+    .post {
+      flex-direction: column;
+      align-items: stretch;
+      gap: var(--sp-24);
+    }
+
+    .post__media {
+      flex: none;
+    }
+
+    .post__copy {
+      gap: var(--sp-24);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .post__image,
+    .post__more-icon {
+      transition: none;
+    }
+
+    .post:hover .post__image {
+      transform: none;
+    }
+  }
+</style>

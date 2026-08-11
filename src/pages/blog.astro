@@ -5,9 +5,17 @@ import Footer from '../components/layout/Footer.astro';
 import PageHero from '../components/sections/PageHero.astro';
 import Newsletter from '../components/sections/Newsletter.astro';
 import Button from '../components/common/Button.astro';
+import BlogCard from '../components/cards/BlogCard.astro';
 import { site } from '../config/site';
+import { getCollection } from 'astro:content';
 
 import blogHero from '../assets/images/blog-hero.webp';
+
+/* Newest first. The frames carry no date, so `publishedAt` exists purely to
+   make this order deterministic — see src/content.config.ts. */
+const posts = (await getCollection('blog', ({ data }) => !data.draft)).sort(
+  (a, b) => b.data.publishedAt.valueOf() - a.data.publishedAt.valueOf(),
+);
 ---
 
 <BaseLayout
@@ -37,9 +45,64 @@ import blogHero from '../assets/images/blog-hero.webp';
     <Button label="Read more" href="#articles" variant="light" />
   </PageHero>
 
+  {/* Figma #237:862 — 80 below the hero, 180 above the newsletter */}
+  <section class="articles" id="articles" aria-labelledby="articles-title">
+    <div class="container">
+      <h2 class="articles__title" id="articles-title">Blog / Articles</h2>
+
+      <div class="articles__list">
+        {
+          posts.map((post, i) => (
+            <BlogCard
+              title={post.data.title}
+              description={post.data.description}
+              href={`/blog/${post.id}`}
+              cover={post.data.cover}
+              coverAlt={post.data.coverAlt}
+              eager={i === 0}
+            />
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
   {/* Figma #91:572 */}
   <Newsletter />
 
   {/* Figma #91:594 */}
   <Footer slot="footer" />
 </BaseLayout>
+
+<style>
+  /* Figma #237:862/#237:863: the hero is 80 clear of the heading, the heading
+     80 clear of the rows, and the block 180 clear of the newsletter. */
+  .articles {
+    padding-top: var(--section-gap-sm);
+    padding-bottom: var(--section-gap);
+  }
+
+  .articles__title {
+    margin-bottom: var(--sp-80);
+    font-size: var(--fs-h2); /* 64 */
+    font-weight: var(--fw-bold);
+    line-height: var(--lh-tight);
+    color: var(--c-ink);
+  }
+
+  /* The rows carry their own rule, so they need no gap between them. */
+  .articles__list {
+    display: flex;
+    flex-direction: column;
+  }
+
+  @media (max-width: 992px) {
+    .articles__title {
+      margin-bottom: var(--section-gap-sm);
+    }
+
+    .articles__list {
+      gap: var(--sp-32);
+    }
+  }
+</style>
