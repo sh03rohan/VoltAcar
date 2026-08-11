@@ -10,7 +10,17 @@ import RadioGroup from '../components/forms/RadioGroup.astro';
 import Checkbox from '../components/forms/Checkbox.astro';
 import { site, forms, testDrive } from '../config/site';
 
+import { Image } from 'astro:assets';
 import driveHero from '../assets/images/test-drive-hero.webp';
+import demoDrive from '../assets/images/demo-drive.webp';
+
+/* Figma #143:748 draws these as three text nodes each beginning "  - ", i.e.
+   the bullets were typed. They are a list, so they are marked up as one. */
+const highlights = [
+  '500 km range on a single charge',
+  '30 minutes fast charge to 80%',
+  '0–100 km/h smooth driving experience',
+];
 
 /* Same contract as the newsletter: an empty endpoint still validates and still
    shows its success state, it just never sends — which is what lets a buyer
@@ -52,7 +62,7 @@ const today = new Date().toISOString().slice(0, 10);
       gives it no heading of any kind, so one is added and hidden: a form this
       long needs a landmark, and a screen reader listing the page's sections
       should not find an unnamed one between the hero and the pitch. */}
-  <section class="booking" aria-labelledby="booking-title">
+  <section class="booking" id="booking" aria-labelledby="booking-title">
     <h2 class="visually-hidden" id="booking-title">Book a demo drive</h2>
 
     <form
@@ -129,6 +139,46 @@ const today = new Date().toISOString().slice(0, 10);
     </form>
   </section>
 
+  {/* Figma #120:282 — 180 below the form band, 180 above the newsletter.
+
+      Deliberately not `FeatureRow`. That component is [684 copy][151][565
+      card] with a plain 16px body and no CTA; this is [565 copy][270][565
+      card] with a 52px heading carrying a coloured run, a list and a pill.
+      Every dimension and all three content slots would have to be overridden
+      — the same reasoning FeatureRow itself gives for not being
+      AlternatingBlock. */}
+  <section class="pitch" aria-labelledby="pitch-title">
+    <div class="container pitch__inner">
+      <div class="pitch__copy">
+        <div class="pitch__text">
+          <h2 class="pitch__title" id="pitch-title">
+            Redefining Every Drive <span class="pitch__accent">with Smarter Innovation</span>
+          </h2>
+
+          <ul class="pitch__list">
+            {highlights.map((item) => <li>{item}</li>)}
+          </ul>
+        </div>
+
+        {/* The pitch sits below the form, so its CTA sends you back up to it
+            rather than to a page that does not exist. */}
+        <Button label="Demo Drive" href="#booking" variant="dark" />
+      </div>
+
+      <div class="pitch__media">
+        <Image
+          class="pitch__image"
+          src={demoDrive}
+          alt="An electric car on a country lane between wildflower meadows"
+          widths={[400, 565, 848, 1130]}
+          sizes="(max-width: 992px) 92vw, 40vw"
+          loading="lazy"
+          decoding="async"
+        />
+      </div>
+    </div>
+  </section>
+
   {/* Figma #91:572 */}
   <Newsletter />
 
@@ -187,10 +237,95 @@ const today = new Date().toISOString().slice(0, 10);
   }
 
 
+  /* ---------- Pitch (#120:282) ---------- */
+
+  .pitch {
+    padding-block: var(--section-gap); /* 180 above the newsletter */
+  }
+
+  /* 565 + 565 of a 1400 row, justified apart — the 270 between them is what
+     is left over rather than a stated gap. */
+  .pitch__inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--sp-48);
+  }
+
+  .pitch__copy {
+    display: flex;
+    flex: 0 1 40.357%; /* 565 / 1400 */
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--sp-80);
+  }
+
+  .pitch__text {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-32);
+  }
+
+  .pitch__title {
+    font-size: var(--fs-h3); /* 52 */
+    font-weight: var(--fw-bold);
+    line-height: var(--lh-tight);
+    color: var(--c-ink);
+  }
+
+  .pitch__accent {
+    color: var(--c-steel);
+  }
+
+  /* The frame sets these in #000000 where every other body text in the file is
+     #131400. Taken as a slip and set in ink. */
+  .pitch__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-10);
+    padding-left: var(--sp-20);
+    font-size: var(--fs-lead); /* 20 */
+    line-height: var(--lh-body);
+    color: var(--c-ink);
+  }
+
+  .pitch__list li::marker {
+    color: var(--c-steel);
+  }
+
+  .pitch__media {
+    flex: 0 0 40.357%; /* 565 / 1400 */
+    aspect-ratio: 565 / 700;
+    border-radius: var(--r-sm);
+    overflow: hidden;
+  }
+
+  .pitch__image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
   @media (max-width: 768px) {
     .booking__row {
       flex-direction: column;
       gap: var(--sp-24);
+    }
+
+    /* Copy first: the render is the reward for reading it, not the lede. */
+    .pitch__inner {
+      flex-direction: column;
+      align-items: stretch;
+      gap: var(--section-gap-sm);
+    }
+
+    .pitch__copy {
+      gap: var(--sp-48);
+    }
+
+    /* 565 x 700 is a portrait card beside a column and a wall on top of one. */
+    .pitch__media {
+      aspect-ratio: 4 / 3;
     }
   }
 </style>
