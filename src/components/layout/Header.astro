@@ -10,7 +10,20 @@ import { navigation, site } from '../../config/site';
  * Sits 24px from the top of the page, 1400px wide, overlaying the dark hero.
  * Layout is space-between: wordmark / nav / CTA. Nav links are 16px Medium
  * with 32px gaps; the current page is lime, the rest cream.
+ *
+ * Every frame in the file puts this over a dark hero, so that is the default.
+ * The 404 is the one page with no dark band anywhere — cream top to bottom —
+ * and the whole header is invisible on it: the lime wordmark measures 1.05:1
+ * there and the cream links 1.07:1. `theme="light"` inverts the three colours
+ * that carry, and stops applying the moment the header pins itself, because
+ * pinning gives it an ink background of its own.
  */
+interface Props {
+  theme?: 'dark' | 'light';
+}
+
+const { theme = 'dark' } = Astro.props;
+
 const pathname = Astro.url.pathname.replace(/\/+$/, '') || '/';
 
 const isCurrent = (href: string): boolean =>
@@ -22,7 +35,7 @@ const isBranchCurrent = (link: (typeof navigation)[number]): boolean =>
     : isCurrent(link.href);
 ---
 
-<header class="header on-dark" data-header>
+<header class:list={['header', theme === 'dark' && 'on-dark', `header--${theme}`]} data-header>
   <div class="header__inner">
     <a class="header__logo" href="/" aria-label={`${site.name} — home`}>
       {site.name}
@@ -81,8 +94,14 @@ const isBranchCurrent = (link: (typeof navigation)[number]): boolean =>
       </ul>
     </nav>
 
+    {/* White on cream is 1.07:1, so the light theme takes the ink pill the
+        404's own "Go Back to Homepage" button uses. */}
     <div class="header__cta">
-      <Button label="Take a Test Drive" href="/test-drive" variant="light" />
+      <Button
+        label="Take a Test Drive"
+        href="/test-drive"
+        variant={theme === 'light' ? 'dark' : 'light'}
+      />
     </div>
 
     <button
@@ -234,6 +253,30 @@ const isBranchCurrent = (link: (typeof navigation)[number]): boolean =>
   .nav__link.is-current,
   .nav__link:hover {
     color: var(--c-primary);
+  }
+
+  /* ---------- Light theme ---------- */
+
+  /* Only the resting header inverts. `.is-pinned` paints itself ink, so the
+     dark treatment is correct again from that point and these have to stop
+     applying — hence `:not(.is-pinned)` rather than a plain class. */
+  /* Scoped to the bar, not the header: the same class names appear inside the
+     mobile drawer, whose panel is ink in every theme. */
+  .header--light:not(.is-pinned) .header__inner .header__logo {
+    color: var(--c-ink);
+  }
+
+  .header--light:not(.is-pinned) .header__inner .nav__link {
+    color: var(--c-muted);
+  }
+
+  .header--light:not(.is-pinned) .header__inner .nav__link.is-current,
+  .header--light:not(.is-pinned) .header__inner .nav__link:hover {
+    color: var(--c-ink);
+  }
+
+  .header--light:not(.is-pinned) .header__toggle {
+    color: var(--c-ink);
   }
 
   /* Icons come from Icon.astro and carry its scope, not this component's, so

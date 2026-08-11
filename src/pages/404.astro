@@ -1,0 +1,146 @@
+---
+import { Image } from 'astro:assets';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Header from '../components/layout/Header.astro';
+import Footer from '../components/layout/Footer.astro';
+import Button from '../components/common/Button.astro';
+import { site } from '../config/site';
+
+import wheel from '../assets/images/wheel-404.webp';
+---
+
+{/* `noindex`, because a 404 that ranks is worse than one that does not. */}
+<BaseLayout title={`Page not found | ${site.name}`} noindex>
+  {/* Figma #25:182 draws no header and no footer. Both are added anyway: a
+      404 whose only exit is the browser's back button is a dead end, and this
+      is the page a visitor is most likely to arrive on from a stale link.
+
+      It is also the one page in the file that is cream top to bottom, so the
+      header takes its light theme — the lime wordmark measures 1.05:1 here
+      and the cream nav links 1.07:1. */}
+  <Header slot="header" theme="light" />
+
+  <section class="notfound">
+    <div class="notfound__inner">
+      {/* The numerals and the wheel together spell 404; the wheel is the
+          nought. Decorative as far as a screen reader is concerned — the
+          heading below carries the same thing in words. */}
+      <p class="notfound__code" aria-hidden="true">
+        <span class="notfound__digit">4</span>
+        <Image
+          class="notfound__wheel"
+          src={wheel}
+          alt=""
+          widths={[184, 368, 736]}
+          sizes="(max-width: 768px) 45vw, 23vw"
+          loading="eager"
+          decoding="async"
+        />
+        <span class="notfound__digit">4</span>
+      </p>
+
+      <div class="notfound__copy">
+        <h1 class="notfound__title">
+          <span class="visually-hidden">404. </span>Looks like the page just drove away
+        </h1>
+
+        <Button label="Go Back to Homepage" href="/" variant="dark" />
+      </div>
+    </div>
+  </section>
+
+  {/* Figma #91:594 */}
+  <Footer slot="footer" />
+</BaseLayout>
+
+<style>
+  /* The frame's block sits at y=91 of a 780 band and its content is 597.6
+     tall, so 780 minus the content, halved, is that 91 exactly — centring
+     reproduces the placement without stating it. */
+  .notfound {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: var(--banner-h); /* 780 */
+    padding-block: var(--section-gap-sm);
+    padding-inline: var(--gutter);
+  }
+
+  /* Figma #67:297: 864 wide, centred, 32 between the numerals and the copy. */
+  .notfound__inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--sp-32);
+    width: 100%;
+    max-width: 54rem; /* 864 */
+  }
+
+  .notfound__code {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* 400 at the 1600 frame is 25vw. Held fluid rather than fixed: a single 400px
+     numeral is wider than a phone, and the row as drawn is ~1150. */
+  .notfound__digit {
+    font-size: clamp(4.5rem, 25vw, 25rem);
+    font-weight: var(--fw-bold);
+    line-height: 1;
+    color: var(--c-ink);
+  }
+
+  /* Figma #67:285 sets a -14 gap — an overlap, which `gap` cannot express, so
+     it is a negative margin. 14/1600 is 0.875vw, so it tightens with the type
+     instead of swallowing the wheel at small sizes. */
+  .notfound__wheel {
+    width: clamp(4.14rem, 23vw, 23rem);
+    height: auto;
+    margin-inline: -0.875vw;
+  }
+
+  /* Figma #67:271: 511 wide, gap 16. */
+  .notfound__copy {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--sp-16);
+    max-width: 31.9375rem; /* 511 */
+  }
+
+  /* The frame holds the sentence to a 370 box, which is what breaks it after
+     "page" — at its natural 570 it would run on one line. */
+  .notfound__title {
+    max-width: 23.125rem; /* 370 */
+    font-size: var(--fs-h4); /* 36 */
+    font-weight: var(--fw-medium);
+    line-height: var(--lh-heading);
+    text-align: center;
+    color: var(--c-ink);
+  }
+
+  /* Below the container the numerals stop being type and start being a
+     picture, so the row is allowed to fill the width instead of holding a
+     measure it cannot keep. */
+  @media (max-width: 768px) {
+    /* 780 is a band on a desktop page and most of a phone screen. The block
+       is ~380 tall here, so holding the frame's height left a third of the
+       viewport empty under the button. */
+    .notfound {
+      min-height: 32rem;
+    }
+
+    .notfound__digit {
+      font-size: clamp(4rem, 22vw, 12rem);
+    }
+
+    .notfound__wheel {
+      width: clamp(3.5rem, 20vw, 11rem);
+    }
+
+    .notfound__title {
+      max-width: none;
+    }
+  }
+</style>
