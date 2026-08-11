@@ -22,3 +22,7 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# Figma download targets — scratch only, never committed
+_ref/
+_raw/
