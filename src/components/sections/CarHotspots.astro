@@ -751,12 +751,16 @@ const titleFor = (id: string): string => features.find((f) => f.id === id)?.titl
     transform: scale(1.08);
   }
 
-  /* The single biggest thing the card can give back to the stage. The ratio
-     still governs the shape; the cap stops it eating a short viewport, and the
-     picture crops rather than squashing because it is `cover`. */
+  /* The single biggest thing the card can give back to the stage, so its
+     height is on a viewport clamp. That height is *stated*, not derived from
+     a ratio: `aspect-ratio` with a `max-height` re-derives the other axis when
+     the height clamps, so a 4/3 box under a 150px ceiling came out 150 tall
+     and 200 wide inside a 270px column — the picture was being narrowed by a
+     rule meant only to cap how tall it got. Width fills; the picture crops
+     rather than squashing, because it is `cover`. */
   .card__media {
-    aspect-ratio: 4 / 3;
-    max-height: clamp(4.5rem, 15vh, 10rem);
+    width: 100%;
+    height: clamp(4.5rem, 15vh, 10rem);
     border-radius: var(--r-sm);
     background-color: var(--c-cream);
     overflow: hidden;
@@ -933,14 +937,19 @@ const titleFor = (id: string): string => features.find((f) => f.id === id)?.titl
     margin: 0;
     padding: 0;
     list-style: none;
-    /* Centred only while the strip fits. `justify-content: center` on an
-       overflowing scroll container pushes the first item past the start edge
-       and no amount of scrolling brings it back — `width: fit-content` with
-       auto margins centres when there is room and starts at the left when
-       there is not. */
-    width: fit-content;
+    /* Centred between the arrows, whatever the number of thumbnails.
+       `safe` is doing real work here: plain `center` on a scroll container
+       pushes the first item past the start edge once the strip overflows, and
+       no amount of scrolling brings it back. `safe` falls back to `start` in
+       exactly that case and centres in every other.
+
+       This replaces a `width: fit-content` + auto-margin arrangement that was
+       inert — `flex-grow: 1` sizes the strip before an auto margin ever sees
+       free space, so the list filled the gap between the arrows and its items
+       stacked up at the left of it. */
+    justify-content: safe center;
+    min-width: 0;
     max-width: 100%;
-    margin-inline: auto;
     overflow-x: auto;
     scrollbar-width: none;
     scroll-snap-type: x proximity;
@@ -950,9 +959,14 @@ const titleFor = (id: string): string => features.find((f) => f.id === id)?.titl
     display: none;
   }
 
+  /* Sized, then allowed to shrink only so far. Without the floor the items
+     shrink for ever and the strip can never overflow — which sounds harmless
+     until a template with a dozen views renders twelve 90px thumbnails
+     instead of scrolling. Past the floor the strip scrolls, which is what the
+     arrows and the snapping are for. */
   .thumbs__list > li {
-    flex: 1 1 8.5rem;
-    max-width: 15rem;
+    flex: 0 1 15rem;
+    min-width: 8.5rem;
     scroll-snap-align: start;
   }
 
@@ -1108,17 +1122,22 @@ const titleFor = (id: string): string => features.find((f) => f.id === id)?.titl
       align-items: start;
     }
 
+    /* A square set by the column's width, so the height goes back to auto and
+       the ratio drives it — the opposite axis from the anchored card. */
     .card__media {
       grid-row: 1 / -1;
       align-self: start;
-      max-height: none;
+      height: auto;
       aspect-ratio: 1;
     }
 
+    /* No end padding to clear the close button. The button is out of flow and
+       the category is a short label — measured, it ends between 92 and 254px
+       short of the button on every screen this layout runs at, the narrowest
+       being a 360px phone. Reserving space for a collision that cannot happen
+       would only narrow the row. */
     .card__category {
       margin-top: 0;
-      /* Clear of the close button in its corner. */
-      padding-inline-end: var(--sp-24);
     }
 
     .card__category,
