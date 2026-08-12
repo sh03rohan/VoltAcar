@@ -6,9 +6,14 @@ import featureCabin from '../assets/images/feature-cabin.webp';
 import slideStyle from '../assets/images/slide-style.webp';
 import slideRide from '../assets/images/slide-ride.webp';
 
-import viewFront from '../assets/images/feature-charging.webp';
-import viewTop from '../assets/images/hotspot-car.webp';
-import viewOverhead from '../assets/images/feature-range.webp';
+/* Cut out from the studio renders and trimmed to the car — see the note on
+   `views`. Trimming is what stops a third of the stage being spent on the
+   empty margin the studio frame carried, and it is why the marker coordinates
+   below are not the ones the frame states: they are percentages of the image,
+   so cropping the image moves every one of them. They were remapped with the
+   crop, not re-guessed. */
+import viewFront from '../assets/images/car-front.webp';
+import viewTop from '../assets/images/car-top.webp';
 import viewInterior from '../assets/images/feature-cabin.webp';
 
 /**
@@ -61,6 +66,12 @@ export interface CarView {
   /** Draw the dashed ground ring. Off for views taken from inside the car,
       where a ground plane is nonsense. Defaults to on. */
   ground?: boolean;
+  /** Render inside a rounded frame rather than as a free-standing cutout.
+      For any view whose picture is a scene rather than a car on a backdrop —
+      there is nothing to knock out, so it is presented as an inset instead.
+      Kept separate from `ground` on purpose: they happen to coincide today,
+      and a fourth view could easily want one without the other. */
+  framed?: boolean;
   hotspots: ViewHotspot[];
 }
 
@@ -152,9 +163,13 @@ export const features: Feature[] = [
 /* -------------------------------------------------------------------------
    Views
    -------------------------------------------------------------------------
-   Four genuinely distinct viewpoints, which is what this project's renders
-   actually contain — a front elevation, two plan views and the cabin. They
-   are studio shots on white, which is why the viewer sits in a white panel.
+   Three viewpoints: a front elevation, a plan view, and the cabin.
+
+   The first two are studio renders with their backdrops knocked out, so the
+   car sits on the section rather than in a box. The cabin is not — it is a
+   photograph taken from inside the car, where there is no backdrop around a
+   subject to remove; the whole frame is the subject. It is presented as a
+   framed inset instead.
 
    This is *not* a turntable: the renders are separate photographs, not even
    steps around one axis, so dragging steps between viewpoints rather than
@@ -170,9 +185,9 @@ export const views: CarView[] = [
        would sit on the wing mirror. A view only carries the subjects it can
        actually show. */
     hotspots: [
-      { feature: 'roof', x: 50, y: 22 },
-      { feature: 'lights', x: 63.5, y: 50 },
-      { feature: 'wheels', x: 78, y: 76 },
+      { feature: 'roof', x: 50, y: 9 },
+      { feature: 'lights', x: 72.84, y: 46.21 },
+      { feature: 'wheels', x: 89.73, y: 80.77 },
     ],
   },
   {
@@ -181,25 +196,14 @@ export const views: CarView[] = [
     image: viewTop,
     imageAlt: 'The car from directly above, showing its roof, doors and wheels',
     /* The frame's own marker coordinates (#143:641 and siblings), converted
-       from the 860x464 stage to percentages of the render. */
+       from the 860x464 stage to percentages of the render, then remapped onto
+       the trimmed cutout — see the note on `views` above. */
     hotspots: [
-      { feature: 'roof', x: 37.67, y: 31.47 },
-      { feature: 'cargo', x: 66.16, y: 30.17 },
-      { feature: 'rear', x: 6.86, y: 46.12 },
-      { feature: 'doors', x: 46.86, y: 75.65 },
-      { feature: 'wheels', x: 83.49, y: 91.16 },
-    ],
-  },
-  {
-    id: 'overhead',
-    label: 'Overhead',
-    image: viewOverhead,
-    imageAlt: 'The car from above with the cabin visible through the glass roof',
-    hotspots: [
-      { feature: 'cabin', x: 62, y: 50 },
-      { feature: 'roof', x: 40, y: 22 },
-      { feature: 'rear', x: 8, y: 50 },
-      { feature: 'wheels', x: 80, y: 86 },
+      { feature: 'roof', x: 37.07, y: 29.57 },
+      { feature: 'cargo', x: 66.95, y: 28.19 },
+      { feature: 'rear', x: 4.76, y: 45.09 },
+      { feature: 'doors', x: 46.71, y: 76.37 },
+      { feature: 'wheels', x: 85.12, y: 92.8 },
     ],
   },
   {
@@ -208,6 +212,7 @@ export const views: CarView[] = [
     image: viewInterior,
     imageAlt: 'The cabin from behind the front seats, looking out through the windscreen',
     ground: false,
+    framed: true,
     hotspots: [
       { feature: 'roof', x: 50, y: 26 },
       { feature: 'cabin', x: 57, y: 57 },

@@ -7,17 +7,25 @@ import { features, views } from '../../data/hotspots';
  * The car explorer — Figma #48:60, extended to the client's reference for an
  * interactive viewer.
  *
- * A white panel holding a stage, a row of viewpoint tabs and a strip of
- * thumbnails. Markers sit on the render; clicking one opens a feature card
- * beside the car.
+ * A panel holding a stage, a row of viewpoint tabs and a strip of thumbnails.
+ * Markers sit on the render; clicking one opens a feature card beside the car.
+ *
+ * ONE VIEWPORT
+ *
+ * The section is sized to the viewport, less the header that pins itself over
+ * it, and everything inside is laid out against that budget: fixed rows for
+ * the header and the controls, and a stage that takes what is left. The parts
+ * that can give are on viewport-relative clamps; the stage absorbs the rest.
+ * See the layout notes in the stylesheet — several of them exist because a
+ * blanket `height: 100vh` gets three separate things wrong.
  *
  * WHAT THIS IS NOT
  *
  * It is not WebGL and it is not a turntable. This project has no 3D model and
- * no evenly-spaced rotation sequence — its renders are four separate studio
+ * no evenly-spaced rotation sequence — its renders are separate studio
  * photographs. So dragging steps between viewpoints rather than spinning the
  * car, and the hint says so rather than promising a rotation that cannot
- * happen. Everything else in the reference is here.
+ * happen.
  *
  * Give `views` in the data file 36 evenly-spaced renders and the drag becomes
  * a real 360 with no change to this file; point it at a WebGL camera that
@@ -25,11 +33,11 @@ import { features, views } from '../../data/hotspots';
  *
  * MARKER PLACEMENT
  *
- * The stage is a fixed box and every render has its own aspect ratio, so each
- * image is `contain`ed and letterboxed inside it. Marker coordinates are
- * percentages of the *rendered image*, and the script measures that box and
- * maps them onto it. Treating them as percentages of the stage would put
- * every marker on the interior view somewhere else entirely.
+ * The stage is a box of whatever height is left and every render has its own
+ * aspect ratio, so each image is `contain`ed and letterboxed inside it. Marker
+ * coordinates are percentages of the *rendered image*, and the script measures
+ * that box and maps them onto it. Treating them as percentages of the stage
+ * would put every marker on the interior view somewhere else entirely.
  *
  * Panels are rendered server-side and hidden: the right one is a matter of
  * which panel is shown rather than of copying strings around, each image stays
@@ -98,6 +106,7 @@ const titleFor = (id: string): string => features.find((f) => f.id === id)?.titl
                 widths={[640, 900, 1280]}
                 sizes="(max-width: 1100px) 92vw, 900px"
                 data-view-image={i}
+                data-framed={view.framed ? '' : undefined}
                 loading={i === 0 ? 'eager' : 'lazy'}
                 decoding="async"
                 hidden={i !== 0}
@@ -130,8 +139,6 @@ const titleFor = (id: string): string => features.find((f) => f.id === id)?.titl
             )
           }
         </div>
-
-        <p class="stage__dial" aria-hidden="true"><span>360°</span></p>
       </div>
 
       {/* ---------- Feature card ---------- */}
@@ -244,22 +251,59 @@ const titleFor = (id: string): string => features.find((f) => f.id === id)?.titl
 </section>
 
 <style>
+  /* ---------- One viewport ----------
+     The section is sized to the viewport and everything inside it is laid out
+     against that budget: fixed rows for the header and the controls, and the
+     stage taking whatever is left. Nothing here is a scaled-down copy of a
+     taller layout — the parts that can give (title size, card media, control
+     heights) are on viewport-relative clamps, and the stage absorbs the rest.
+
+     `svh` rather than `vh`: on phones `vh` is the *large* viewport, measured
+     with the browser's chrome retracted, so a 100vh section is taller than
+     what is actually on screen until you scroll. `svh` is the visible box. */
   .explorer {
-    padding-block: var(--section-gap-sm);
+    display: flex;
+    align-items: center;
+    padding-block: var(--explorer-pad);
     padding-inline: var(--gutter);
     background-color: var(--c-cream);
+
+    --explorer-pad: clamp(0.75rem, 2.6vh, 2.5rem);
+    --explorer-row: clamp(0.625rem, 1.9vh, 1.5rem);
   }
 
-  /* The renders are studio shots on white, so the viewer sits on white — as
-     the reference does, a rounded panel holding the whole experience. */
+  /* Only claim the viewport where the stacked layout has enough of it to fill.
+     Below this, crushing a car, a card and two control rows into a couple of
+     hundred pixels is the failure mode a blanket 100vh has — so the section
+     flows at its natural height instead. Short *and* wide is the one case
+     that can still fit, by turning the layout on its side; that has its own
+     rule at the foot of this stylesheet and claims the viewport again. */
+  @media (min-height: 640px) {
+    .explorer {
+      /* Minus the header, which pins itself once the page is past the hero
+         and then covers the top of everything. A full 100svh here would be
+         exactly `--header-h` taller than what is actually on screen — the
+         same mistake `vh` makes on phones, from a different direction. */
+      height: calc(100vh - var(--header-h));
+      height: calc(100svh - var(--header-h));
+    }
+
+    /* The stage stops declaring a shape and takes what is left instead. */
+    .stage__viewport {
+      aspect-ratio: auto;
+    }
+  }
+
+  /* The renders are cut out, so the panel is the ground the car stands on. */
   .explorer__panel {
     display: flex;
     flex-direction: column;
-    gap: var(--sp-24);
+    gap: var(--explorer-row);
     width: 100%;
+    height: 100%;
     max-width: var(--container);
     margin-inline: auto;
-    padding: var(--sp-32);
+    padding: clamp(var(--sp-16), 2.2vh, var(--sp-32));
     border: 1px solid rgba(19, 20, 0, 0.08);
     border-radius: var(--r-lg);
     background-color: var(--c-white);
@@ -310,8 +354,11 @@ const titleFor = (id: string): string => features.find((f) => f.id === id)?.titl
     text-align: center;
   }
 
+  /* Capped at the global H3 and allowed to come down on short viewports, so
+     the header gives the stage room rather than the other way round. The token
+     is still the ceiling — this narrows the range, it does not redefine it. */
   .explorer__title {
-    font-size: var(--fs-h3); /* 52 */
+    font-size: min(var(--fs-h3), max(1.5rem, 4.4vh)); /* 52 ceiling */
     font-weight: var(--fw-bold);
     line-height: var(--lh-tight);
     color: var(--c-ink);
@@ -319,10 +366,25 @@ const titleFor = (id: string): string => features.find((f) => f.id === id)?.titl
 
   .explorer__sub {
     max-width: 30rem;
-    margin: var(--sp-12) auto 0;
+    margin: clamp(0.25rem, 1.1vh, var(--sp-12)) auto 0;
     font-size: var(--fs-body);
     line-height: var(--lh-body);
     color: var(--c-muted);
+  }
+
+  /* What goes first when the viewport is short. The title and the drag hint
+     carry the section on their own; below that the hint goes too and the icon
+     row's job falls to the tabs, which are unmistakable. */
+  @media (max-height: 780px) {
+    .explorer__sub {
+      display: none;
+    }
+  }
+
+  @media (max-height: 560px) {
+    .explorer__hint {
+      display: none;
+    }
   }
 
   .explorer__reset {
@@ -355,8 +417,13 @@ const titleFor = (id: string): string => features.find((f) => f.id === id)?.titl
 
   /* The card is positioned against this, not laid out beside the stage: it
      has to sit next to whichever marker was clicked. */
+  /* Takes every pixel the fixed rows above and below did not. `min-height: 0`
+     is what lets it shrink below its content — without it a flex item floors
+     at its content size and the panel overflows the viewport. */
   .explorer__body {
     position: relative;
+    flex: 1 1 auto;
+    min-height: 0;
   }
 
   .connector {
@@ -417,11 +484,34 @@ const titleFor = (id: string): string => features.find((f) => f.id === id)?.titl
     flex-direction: column;
     align-items: center;
     min-width: 0;
+    height: 100%;
+    transition: padding var(--dur) var(--ease-out);
   }
 
+  /* An anchored card overlays the stage, and on the wide plan view that meant
+     it sat on the back half of the car. So the stage gives up the strip the
+     card occupies and re-`contain`s the render into what is left: the car
+     draws back and to the side as the card comes in, which is the move a
+     configurator makes, rather than being covered where it stands.
+
+     Markers follow for free — the resize observer re-runs placement, which
+     re-cuts the lead line with it. */
+  .explorer__body.has-card .stage {
+    padding-inline-end: var(--card-clear, 20.5rem);
+  }
+
+  /* A ratio by default, because when the section is *not* claiming the
+     viewport nothing else gives the stage a height: the renders are absolutely
+     positioned, so the box would collapse to nothing. Inside the viewport-sized
+     layout below it is dropped and the leftover height governs instead.
+
+     Either way the markers follow — `placePins()` derives the rendered
+     picture's box from its natural size and this one, whatever shape it is. */
   .stage__viewport {
     position: relative;
     width: 100%;
+    height: 100%;
+    min-height: 0;
     aspect-ratio: 16 / 10;
     /* Vertical panning still belongs to the page; horizontal is the drag. */
     touch-action: pan-y;
@@ -439,11 +529,13 @@ const titleFor = (id: string): string => features.find((f) => f.id === id)?.titl
     display: none;
   }
 
+  /* Width, left and bottom are set by the script against the rendered picture;
+     these are the pre-placement fallback. */
   .stage__ground {
     position: absolute;
     left: 50%;
     bottom: 7%;
-    width: 72%;
+    width: 62%;
     aspect-ratio: 3 / 1;
     border: 1px dashed rgba(19, 20, 0, 0.16);
     border-radius: 50%;
@@ -465,22 +557,20 @@ const titleFor = (id: string): string => features.find((f) => f.id === id)?.titl
     display: none;
   }
 
-  .stage__dial {
-    display: flex;
-    align-items: center;
-    gap: var(--sp-8);
-    margin-top: var(--sp-8);
-    font-size: var(--fs-small);
-    font-weight: var(--fw-medium);
-    color: var(--c-steel-text);
-  }
-
-  .stage__dial::before,
-  .stage__dial::after {
-    content: '';
-    width: 2.5rem;
-    height: 1px;
-    background-color: rgba(19, 20, 0, 0.14);
+  /* The cabin shot is a photograph taken from inside the car: there is no
+     backdrop around a subject to knock out, so it is framed as a deliberate
+     inset rather than left as a bare rectangle beside two cutouts. */
+  .stage__image[data-framed] {
+    border-radius: var(--r-md);
+    /* `contain` letterboxes, and a radius on a letterboxed box rounds the box
+       and not the picture. Shrinking to the picture's own footprint is what
+       makes the corners land on the photograph. */
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 100%;
+    inset: 0;
+    margin: auto;
   }
 
   /* ---------- Markers ---------- */
@@ -581,14 +671,46 @@ const titleFor = (id: string): string => features.find((f) => f.id === id)?.titl
   /* Placed by the script beside the active marker, on whichever side has
      room. `left`/`top` are set inline. */
   .card {
+    /* Read by the script to decide whether to anchor the card to a marker.
+       It cannot infer that from `position` any more: the mobile sheet is
+       absolutely positioned too, and duplicating the breakpoint in JS is what
+       put the two out of step last time. */
+    --card-mode: anchored;
+
     position: absolute;
     z-index: 4;
     width: 19rem;
+    /* The body is now only as tall as the viewport allows, so the card takes
+       a ceiling and scrolls inside it rather than growing past the panel.
+       Minus the inset it is placed at, top and bottom — at a plain 100% the
+       card may be exactly as tall as the body, and a card that tall still
+       gets positioned 8px down from the top, so it hangs 8px out the
+       bottom. Keep this in step with EDGE in the script. */
+    max-height: calc(100% - 1rem);
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
     padding: var(--sp-16);
     border: 1px solid rgba(19, 20, 0, 0.08);
     border-radius: var(--r-md);
-    background-color: var(--c-white);
     box-shadow: var(--shadow-lg);
+
+    /* A car and a full spec card do not both fit on a 780px phone, so the
+       card scrolls — and a scrolling box with a hard edge reads as broken
+       text rather than as more text. These four layers are the standard
+       scroll shadow: the two `local` covers travel with the content and mask
+       the two fixed shadows whenever the card is already at that end, so the
+       cue appears only on the side there is actually more to see. */
+    background:
+      linear-gradient(var(--c-white) 30%, rgba(255, 255, 255, 0)) top / 100% 1.5rem no-repeat
+        local,
+      linear-gradient(rgba(255, 255, 255, 0), var(--c-white) 70%) bottom / 100% 1.5rem no-repeat
+        local,
+      radial-gradient(farthest-side at 50% 0, rgba(19, 20, 0, 0.14), rgba(19, 20, 0, 0)) top /
+        100% 0.5rem no-repeat scroll,
+      radial-gradient(farthest-side at 50% 100%, rgba(19, 20, 0, 0.14), rgba(19, 20, 0, 0))
+        bottom / 100% 0.5rem no-repeat scroll,
+      var(--c-white);
     /* Moving between two markers is a glide, not a jump. Nothing transitions
        on the first open: the card comes out of `display: none`, and an element
        that was not rendered has no old value to animate from. Reduced motion
@@ -629,8 +751,12 @@ const titleFor = (id: string): string => features.find((f) => f.id === id)?.titl
     transform: scale(1.08);
   }
 
+  /* The single biggest thing the card can give back to the stage. The ratio
+     still governs the shape; the cap stops it eating a short viewport, and the
+     picture crops rather than squashing because it is `cover`. */
   .card__media {
     aspect-ratio: 4 / 3;
+    max-height: clamp(4.5rem, 15vh, 10rem);
     border-radius: var(--r-sm);
     background-color: var(--c-cream);
     overflow: hidden;
@@ -721,8 +847,9 @@ const titleFor = (id: string): string => features.find((f) => f.id === id)?.titl
     justify-content: center;
     gap: var(--sp-2);
     align-self: center;
+    flex: none;
     max-width: 100%;
-    padding: var(--sp-8);
+    padding: clamp(0.25rem, 0.7vh, var(--sp-8));
     border: 1px solid rgba(19, 20, 0, 0.08);
     border-radius: var(--r-pill);
     background-color: var(--c-white);
@@ -730,7 +857,7 @@ const titleFor = (id: string): string => features.find((f) => f.id === id)?.titl
   }
 
   .tabs__tab {
-    padding: var(--sp-8) var(--sp-20);
+    padding: clamp(0.25rem, 0.8vh, var(--sp-8)) var(--sp-20);
     border: 0;
     border-radius: var(--r-pill);
     background: none;
@@ -759,6 +886,7 @@ const titleFor = (id: string): string => features.find((f) => f.id === id)?.titl
   .thumbs {
     display: flex;
     align-items: center;
+    flex: none;
     gap: var(--sp-12);
   }
 
@@ -834,7 +962,9 @@ const titleFor = (id: string): string => features.find((f) => f.id === id)?.titl
     padding: 0;
     border: 2px solid transparent;
     border-radius: var(--r-sm);
-    background-color: var(--c-cream);
+    /* No tile behind the car — the cutouts would otherwise sit on a cream
+       chip, which is the box this section was asked to lose. */
+    background-color: transparent;
     cursor: pointer;
     overflow: hidden;
     transition: border-color var(--dur-fast) var(--ease-out);
@@ -849,7 +979,7 @@ const titleFor = (id: string): string => features.find((f) => f.id === id)?.titl
   .thumbs__item img {
     display: block;
     width: 100%;
-    height: 6.5rem;
+    height: clamp(3rem, 7.5vh, 6.5rem);
     object-fit: contain;
   }
 
@@ -863,67 +993,165 @@ const titleFor = (id: string): string => features.find((f) => f.id === id)?.titl
 
   /* ---------- Responsive ---------- */
 
-  /* The card cannot sit beside the car much below the container, so it drops
-     under it and the stage takes the full width. */
+  /* Tablet landscape and down: the three-column header has no room for a
+     centred title flanked by two controls, so it stacks. */
   @media (max-width: 1100px) {
-    .explorer__panel {
-      padding: var(--sp-24) var(--sp-20);
-    }
-
+    /* Title across the top, then the hint and the escape hatch sharing one
+       row beneath it. Stacking all three costs seventy pixels of a viewport
+       this section has to live inside, and buys nothing. */
     .explorer__head {
-      grid-template-columns: minmax(0, 1fr);
-      justify-items: center;
+      grid-template-columns: auto auto;
+      grid-template-areas:
+        'title title'
+        'hint reset';
+      justify-content: center;
+      align-items: center;
+      gap: var(--sp-12) var(--sp-24);
       text-align: center;
     }
 
-    /* Title, then how to use it, then the escape hatch. */
+    .explorer__titles {
+      grid-area: title;
+    }
+
     .explorer__hint {
-      order: 1;
+      grid-area: hint;
+      text-align: start;
     }
 
     .explorer__reset {
-      order: 2;
-      justify-self: center;
+      grid-area: reset;
+      justify-self: start;
+      height: 2.375rem;
     }
 
     .card {
       width: 17rem;
     }
+
+    .explorer__body.has-card .stage {
+      padding-inline-end: 18.5rem;
+    }
   }
 
-  /* Below this the stage is too narrow to hold a card beside a marker, so the
-     card becomes a sheet under the car and the connector is dropped — a line
-     to something off the bottom of the panel is noise, not a cue. */
+  /* ---------- Tablet portrait and phones ----------
+     Below this the stage is too narrow to hold a card beside a marker, so the
+     card becomes a sheet under the car and the connector goes — a lead line
+     to a full-width sheet is noise, not a cue.
+
+     The sheet shares the body's height with the stage rather than overlaying
+     it or being added to it. Overlaying buries the car on a screen that has
+     no room to spare; adding pushes the controls off the bottom, which is the
+     one thing this section may not do. */
   @media (max-width: 820px) {
     .connector,
     .connector.is-on {
       display: none;
     }
 
+    /* Two rows inside the body's fixed height rather than an overlay: the
+       sheet takes the height it needs and the stage keeps the rest, so the
+       car is never behind the card and the panel still cannot grow past the
+       viewport. A hidden card is `display: none`, so with nothing open the
+       row collapses and the stage has the lot. */
+    .explorer__body {
+      display: grid;
+      grid-template-rows: minmax(0, 1fr) auto;
+      gap: var(--sp-12);
+    }
+
+    .explorer__body.has-card .stage {
+      padding-inline-end: 0;
+    }
+
+    .stage {
+      grid-row: 1;
+      min-height: 0;
+    }
+
+    /* The title says the same thing in fewer words, and from here down the
+       height it costs is height the car does not have. */
+    .explorer__sub {
+      display: none;
+    }
+
     .card {
+      --card-mode: sheet;
+
       position: static;
+      grid-row: 2;
       width: 100%;
       max-width: 32rem;
-      margin: var(--sp-24) auto 0;
+      /* Capped so a four-line spec list cannot push the car out of the
+         section; past that it scrolls inside the sheet. */
+      max-height: 16rem;
+      justify-self: center;
+    }
+
+    .card__close {
+      top: var(--sp-8);
+      right: var(--sp-8);
+    }
+
+    /* Side by side, so the sheet costs a fraction of the height it does with
+       the picture stacked above the text. */
+    .card__panel {
+      display: grid;
+      grid-template-columns: 8.5rem minmax(0, 1fr);
+      /* Declared, not implicit. `grid-row: 1 / -1` counts to the last line of
+         the *explicit* grid, and with no rows declared that line is line 1 —
+         so the span silently collapses to one row and the picture's height
+         becomes row one's height, stranding the category label in a 136px
+         band above the title. Five covers every panel's longest shape. */
+      grid-template-rows: repeat(5, auto);
+      gap: var(--sp-16);
+      align-items: start;
+    }
+
+    .card__media {
+      grid-row: 1 / -1;
+      align-self: start;
+      max-height: none;
+      aspect-ratio: 1;
+    }
+
+    .card__category {
+      margin-top: 0;
+      /* Clear of the close button in its corner. */
+      padding-inline-end: var(--sp-24);
+    }
+
+    .card__category,
+    .card__title,
+    .card__desc,
+    .card__list,
+    .card__cta {
+      grid-column: 2;
     }
   }
 
+  /* ---------- Phones ---------- */
   @media (max-width: 700px) {
     .explorer {
-      padding-block: var(--section-gap);
+      padding-inline: var(--sp-12);
     }
 
     .explorer__panel {
-      padding: var(--sp-20) var(--sp-16);
+      padding: var(--sp-16) var(--sp-12);
     }
 
-    .explorer__title {
-      font-size: var(--fs-h4);
+    /* The header is a third of a phone screen if it keeps all four of its
+       parts. The title stays, and the two that a phone does not need go: the
+       standfirst repeats what the title says, and "drag or swipe" is a hint
+       about a gesture that phones make first anyway — the tabs below name
+       every view outright. Their height goes to the car. */
+    .explorer__sub,
+    .explorer__hint {
+      display: none;
     }
 
-    .stage__viewport {
-      aspect-ratio: 4 / 3;
-    }
+    /* The markers keep their size here — the brief for this section is that
+       they stay easy to tap, and 46px is already the WCAG target. */
 
     /* Wrapping beats a squeezed row; the thumbnails below do the same job
        with pictures. */
@@ -933,11 +1161,89 @@ const titleFor = (id: string): string => features.find((f) => f.id === id)?.titl
       border-radius: var(--r-lg);
     }
 
+    /* A small square thumbnail rather than a third of the sheet's width. The
+       picture is decoration; the description and the spec list are what the
+       marker was clicked for, and on a phone they need the room. */
+    .card__panel {
+      grid-template-columns: 4.5rem minmax(0, 1fr);
+      gap: var(--sp-12);
+    }
+
+    .card {
+      max-height: 17rem;
+      padding: var(--sp-12);
+    }
+
+    .card__title {
+      font-size: var(--fs-body);
+    }
+
+    .card__list {
+      margin-top: var(--sp-12);
+      gap: var(--sp-8);
+    }
+
     .thumbs__list > li {
-      flex: 0 0 6.5rem;
+      flex: 0 0 5rem;
     }
 
     .thumbs__arrow {
+      display: none;
+    }
+  }
+
+  /* Phone portrait: the thumbnail strip repeats what the tabs already do, and
+     three tabs are legible on their own. Its height goes to the car. */
+  @media (max-width: 560px) {
+    .thumbs {
+      display: none;
+    }
+  }
+
+  /* ---------- Short and wide ----------
+     A phone held sideways, or a short desktop window. Stacking the car above
+     two rows of controls in 390px leaves a car an inch tall, so the layout
+     turns: the stage keeps the full height of the panel and the tabs stand
+     beside it in a column. Reorganised rather than shrunk, which is the only
+     way this one fits at all — and because it now does fit, it takes the
+     viewport here too. */
+  @media (max-height: 560px) and (orientation: landscape) {
+    .explorer {
+      height: calc(100vh - var(--header-h));
+      height: calc(100svh - var(--header-h));
+    }
+
+    .explorer__panel {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-rows: auto minmax(0, 1fr);
+      align-items: center;
+    }
+
+    .explorer__head {
+      grid-column: 1 / -1;
+    }
+
+    .explorer__body {
+      grid-column: 1;
+      grid-row: 2;
+      height: 100%;
+    }
+
+    .stage__viewport {
+      aspect-ratio: auto;
+    }
+
+    .tabs {
+      grid-column: 2;
+      grid-row: 2;
+      flex-direction: column;
+      align-self: center;
+      border-radius: var(--r-lg);
+    }
+
+    /* Pictures of three views, next to three buttons naming them. */
+    .thumbs {
       display: none;
     }
   }
@@ -1001,6 +1307,21 @@ const titleFor = (id: string): string => features.find((f) => f.id === id)?.titl
           pin.style.top = `${top + (Number(pin.dataset.y) / 100) * h}px`;
         });
 
+        /* The ring belongs to the car, not to the stage. Sized and placed
+           against the same rendered box the markers use: the stage is a
+           flexible height and the render is `contain`ed inside it, so a ring
+           positioned against the stage floats away from the wheels by
+           whatever the letterbox happens to be. */
+        if (ground && !ground.hidden) {
+          const rw = w * 0.62;
+          const rh = rw / 3;
+          ground.style.width = `${Math.round(rw)}px`;
+          ground.style.left = `${Math.round(left + w / 2)}px`;
+          /* Centred on the car's contact line — the renders are trimmed to
+             the car, so that is the foot of the picture. */
+          ground.style.bottom = `${Math.round(box.height - (top + h * 0.97) - rh / 2)}px`;
+        }
+
         /* The card hangs off a marker, so anything that moves markers moves
            the card too — resize, zoom, and switching view. */
         placeCard();
@@ -1011,8 +1332,12 @@ const titleFor = (id: string): string => features.find((f) => f.id === id)?.titl
          room, and a connector runs between the two. Everything is measured
          rather than assumed: the marker has already been placed against the
          rendered image box, so its rect is the truth. */
+      /* CSS owns the breakpoint. The script asks it which mode the card is in
+         rather than carrying a copy of the number — the two drifting apart is
+         a bug that shows up only at one width and looks like nothing else. */
       const anchored = (): boolean =>
-        !!body && !!connector && getComputedStyle(card).position === 'absolute';
+        !!body && !!connector &&
+        getComputedStyle(card).getPropertyValue('--card-mode').trim() === 'anchored';
 
       /** Gap between the panel edge and the card. */
       const EDGE = 8;
@@ -1194,6 +1519,11 @@ const titleFor = (id: string): string => features.find((f) => f.id === id)?.titl
         openFeature = id;
         syncPins();
         card.hidden = false;
+        /* What the card costs the stage — a side strip when it is anchored
+           beside the car, a row beneath it when it is a sheet. Which of the
+           two is the stylesheet's business; the script only says there is one
+           open, so the breakpoint stays in one place. */
+        body?.classList.add('has-card');
 
         const panel = panels.find((p) => p.dataset.cardPanel === id);
         if (!panel) return;
@@ -1254,6 +1584,8 @@ const titleFor = (id: string): string => features.find((f) => f.id === id)?.titl
           gsap.set(card, { clearProps: 'all' });
           card.style.left = '';
           card.style.top = '';
+          /* Hand the strip back — the car returns to the full stage. */
+          body?.classList.remove('has-card');
         };
 
         const dropConnector = (): void => {

@@ -237,7 +237,7 @@ Measured on a production build:
 
 | | Gzipped |
 |---|---|
-| CSS, all of it | **12.2 KB** |
+| CSS, all of it | **13.2 KB** |
 | Site JavaScript — nav, drawer, sliders, modal, forms, pagination, car explorer | **12.0 KB** |
 | GSAP + ScrollTrigger | **43.0 KB** |
 | Fonts, self-hosted — latin only unless a page needs latin-ext | **38 KB** |
@@ -282,6 +282,13 @@ Chromium-only. Neither affects the published site.
   design and are random clock readings rather than appointment hours,
   `02:34 am` among them
 - **Blog posts**, team members, and the contact details in `site.ts`
+- **Car renders** in `src/data/hotspots.ts`. Two things matter if you swap
+  them: the explorer's own views (`car-front.webp`, `car-top.webp`) are
+  **cut out** — studio shots with the backdrop knocked out to transparency,
+  then cropped to the car — and each marker's `x`/`y` is a **percentage of
+  its image**, so a render with different framing needs its markers moved
+  with it. Everything else about the section adapts on its own: the stage
+  measures whatever you give it.
 
 ---
 
