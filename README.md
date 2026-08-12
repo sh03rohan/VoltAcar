@@ -237,8 +237,8 @@ Measured on a production build:
 
 | | Gzipped |
 |---|---|
-| CSS, all of it | **10.7 KB** |
-| Site JavaScript — nav, drawer, sliders, modal, forms, pagination | **8.6 KB** |
+| CSS, all of it | **12.2 KB** |
+| Site JavaScript — nav, drawer, sliders, modal, forms, pagination, car explorer | **12.0 KB** |
 | GSAP + ScrollTrigger | **43.0 KB** |
 | Fonts, self-hosted — latin only unless a page needs latin-ext | **38 KB** |
 
@@ -247,14 +247,14 @@ Lighthouse on a production build, all eight routes: **accessibility 100**,
 on SEO for one reason — it is `noindex`, which is correct for a 404 and which
 Lighthouse has no way to know.
 
-GSAP is four-fifths of the JavaScript on the page, and it is not optional:
+GSAP is three-quarters of the JavaScript on the page, and it is not optional:
 fourteen components import it, including the two pinned horizontal sliders and
 the team profile modal's open transition. Removing it would mean rewriting
 those, not just losing some fades. Every animation it drives is already
 skipped under `prefers-reduced-motion`.
 
 The header, mobile drawer, nav dropdown, pagination and both forms have no
-animation dependency — that is the 8.6 KB above.
+animation dependency; the car explorer is the largest single script at 4.0 KB.
 
 Images are converted to WebP, resized per breakpoint and content-hashed by
 Astro's build. Nothing in `src/assets` is served at its original size.

@@ -68,7 +68,23 @@ const titleFor = (id: string): string => features.find((f) => f.id === id)?.titl
     </div>
 
     {/* ---------- Body ---------- */}
-    <div class="explorer__body">
+    <div class="explorer__body" data-body>
+      {/* Drawn between the active marker and the card. Sized to the body by
+          the script; `vector-effect` holds the stroke widths however it
+          scales.
+
+          Two strokes, not one. The line crosses both the white panel and the
+          car's black bodywork, and no single colour survives that: ink
+          disappears into the tyres, and anything pale disappears into the
+          panel. So a white halo is laid down first and the ink line sits on
+          top of it — over the panel the halo is invisible and the ink reads;
+          over the paintwork the halo reads and carries the ink with it. */}
+      <svg class="connector" data-connector aria-hidden="true">
+        <path class="connector__halo" data-connector-path-halo />
+        <path class="connector__line" data-connector-path />
+        <circle class="connector__dot" data-connector-dot r="3" />
+      </svg>
+
       <div class="stage">
         <div class="stage__viewport" data-viewport role="group" aria-label="Car viewer">
           <span class="stage__ground" data-ground aria-hidden="true"></span>
@@ -337,11 +353,63 @@ const titleFor = (id: string): string => features.find((f) => f.id === id)?.titl
 
   /* ---------- Body ---------- */
 
+  /* The card is positioned against this, not laid out beside the stage: it
+     has to sit next to whichever marker was clicked. */
   .explorer__body {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 19rem;
-    align-items: center;
-    gap: var(--sp-32);
+    position: relative;
+  }
+
+  .connector {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+
+  .connector__halo,
+  .connector__line,
+  .connector__dot {
+    /* Held at the authored width whatever the viewBox scales to. */
+    vector-effect: non-scaling-stroke;
+  }
+
+  .connector__halo,
+  .connector__line {
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .connector__halo {
+    stroke: var(--c-white);
+    stroke-width: 4;
+    opacity: 0.75;
+  }
+
+  .connector__line {
+    stroke: var(--c-ink);
+    stroke-width: 1.5;
+    opacity: 0.55;
+  }
+
+  .connector__dot {
+    fill: var(--c-ink);
+    stroke: var(--c-white);
+    stroke-width: 1.5;
+  }
+
+
+  /* A class, not the `hidden` attribute: `hidden` is an HTMLElement property
+     and TypeScript does not type it on SVGSVGElement, so toggling it from
+     script would not type-check. */
+  .connector {
+    display: none;
+  }
+
+  .connector.is-on {
+    display: block;
   }
 
   .stage {
@@ -510,14 +578,24 @@ const titleFor = (id: string): string => features.find((f) => f.id === id)?.titl
 
   /* ---------- Feature card ---------- */
 
+  /* Placed by the script beside the active marker, on whichever side has
+     room. `left`/`top` are set inline. */
   .card {
-    position: relative;
-    align-self: center;
+    position: absolute;
+    z-index: 4;
+    width: 19rem;
     padding: var(--sp-16);
     border: 1px solid rgba(19, 20, 0, 0.08);
     border-radius: var(--r-md);
     background-color: var(--c-white);
     box-shadow: var(--shadow-lg);
+    /* Moving between two markers is a glide, not a jump. Nothing transitions
+       on the first open: the card comes out of `display: none`, and an element
+       that was not rendered has no old value to animate from. Reduced motion
+       is handled globally, which zeroes this along with everything else. */
+    transition:
+      left 420ms var(--ease-out),
+      top 420ms var(--ease-out);
   }
 
   .card[hidden],
@@ -808,14 +886,25 @@ const titleFor = (id: string): string => features.find((f) => f.id === id)?.titl
       justify-self: center;
     }
 
-    .explorer__body {
-      grid-template-columns: minmax(0, 1fr);
+    .card {
+      width: 17rem;
+    }
+  }
+
+  /* Below this the stage is too narrow to hold a card beside a marker, so the
+     card becomes a sheet under the car and the connector is dropped — a line
+     to something off the bottom of the panel is noise, not a cue. */
+  @media (max-width: 820px) {
+    .connector,
+    .connector.is-on {
+      display: none;
     }
 
     .card {
-      justify-self: center;
+      position: static;
       width: 100%;
       max-width: 32rem;
+      margin: var(--sp-24) auto 0;
     }
   }
 
@@ -874,6 +963,11 @@ const titleFor = (id: string): string => features.find((f) => f.id === id)?.titl
       const panels = Array.from(section.querySelectorAll<HTMLElement>('[data-card-panel]'));
       const closeBtn = section.querySelector<HTMLButtonElement>('[data-card-close]');
       const ground = section.querySelector<HTMLElement>('[data-ground]');
+      const body = section.querySelector<HTMLElement>('[data-body]');
+      const connector = section.querySelector<SVGSVGElement>('[data-connector]');
+      const connectorPath = section.querySelector<SVGPathElement>('[data-connector-path]');
+      const connectorHalo = section.querySelector<SVGPathElement>('[data-connector-path-halo]');
+      const connectorDot = section.querySelector<SVGCircleElement>('[data-connector-dot]');
       const resetBtn = section.querySelector<HTMLButtonElement>('[data-reset]');
 
       const reduce = (): boolean => prefersReducedMotion();
@@ -906,6 +1000,177 @@ const titleFor = (id: string): string => features.find((f) => f.id === id)?.titl
           pin.style.left = `${left + (Number(pin.dataset.x) / 100) * w}px`;
           pin.style.top = `${top + (Number(pin.dataset.y) / 100) * h}px`;
         });
+
+        /* The card hangs off a marker, so anything that moves markers moves
+           the card too — resize, zoom, and switching view. */
+        placeCard();
+      };
+
+      /* ---------- Card placement ----------
+         The card sits beside the marker that opened it, on whichever side has
+         room, and a connector runs between the two. Everything is measured
+         rather than assumed: the marker has already been placed against the
+         rendered image box, so its rect is the truth. */
+      const anchored = (): boolean =>
+        !!body && !!connector && getComputedStyle(card).position === 'absolute';
+
+      /** Gap between the panel edge and the card. */
+      const EDGE = 8;
+      /** Marker radius: where the lead line leaves the marker, so its first
+          stretch is not hidden underneath the marker's own disc. */
+      const PIN_R = 14;
+      /** Below this the flip to the other edge is not worth the jump. */
+      const MIN_RUN = 40;
+
+      const activePin = (): HTMLElement | undefined =>
+        pins.find((p) => !p.hidden && p.dataset.feature === openFeature);
+
+      /* Draws the lead line between the active marker and the card.
+         Deliberately reads the card's *live* rect rather than the position it
+         was last told to take: while it glides from one marker to the next
+         those two differ, and the line has to stay attached the whole way. */
+      const syncConnector = (): void => {
+        if (!body || !connector || !connectorPath || !connectorDot) return;
+        if (card.hidden || openFeature === null || !anchored()) return;
+        const pin = activePin();
+        if (!pin) return;
+
+        const bodyBox = body.getBoundingClientRect();
+        const pinBox = pin.getBoundingClientRect();
+        const cardBox = card.getBoundingClientRect();
+
+        const px = pinBox.left + pinBox.width / 2 - bodyBox.left;
+        const py = pinBox.top + pinBox.height / 2 - bodyBox.top;
+        const cardL = cardBox.left - bodyBox.left;
+        const cardR = cardBox.right - bodyBox.left;
+        const cardT = cardBox.top - bodyBox.top;
+        const cardB = cardBox.bottom - bodyBox.top;
+
+        /* Out from the marker, then a right angle into the card's near edge —
+           a straight diagonal reads as a stray rule rather than a lead line.
+           When the marker already sits within the card's height the middle
+           leg collapses and the run is simply horizontal, which is correct. */
+        const toRight = px <= cardL;
+        const startX = toRight ? px + PIN_R : px - PIN_R;
+        const endX = toRight ? cardL : cardR;
+        const endY = Math.max(cardT + 24, Math.min(py, cardB - 24));
+        const midX = startX + (endX - startX) * 0.5;
+
+        const d = `M ${startX} ${py} H ${midX} V ${endY} H ${endX}`;
+        connector.setAttribute('viewBox', `0 0 ${bodyBox.width} ${bodyBox.height}`);
+        connectorPath.setAttribute('d', d);
+        connectorHalo?.setAttribute('d', d);
+        /* The dot marks where the line lands, so it arrives with the card. */
+        connectorDot.setAttribute('cx', String(endX));
+        connectorDot.setAttribute('cy', String(endY));
+        connector.classList.add('is-on');
+      };
+
+      /* The card moves under a CSS transition, which fires no frame callbacks
+         of its own, so the line is re-cut on every frame for its duration. */
+      let glideUntil = 0;
+      let gliding = false;
+      const followGlide = (): void => {
+        syncConnector();
+        if (performance.now() < glideUntil) requestAnimationFrame(followGlide);
+        else gliding = false;
+      };
+      const startGlide = (): void => {
+        glideUntil = performance.now() + 480;
+        if (gliding) return;
+        gliding = true;
+        requestAnimationFrame(followGlide);
+      };
+
+      const placeCard = (): void => {
+        /* Closing owns the connector's exit — bail out rather than snapping
+           the line off the instant `openFeature` is cleared. */
+        if (!body || card.hidden || openFeature === null) return;
+
+        if (!anchored()) {
+          card.style.left = '';
+          card.style.top = '';
+          connector?.classList.remove('is-on');
+          return;
+        }
+
+        const pin = activePin();
+        if (!pin) return;
+
+        const bodyBox = body.getBoundingClientRect();
+        const pinBox = pin.getBoundingClientRect();
+        const cardW = card.offsetWidth;
+        const cardH = card.offsetHeight;
+
+        const px = pinBox.left + pinBox.width / 2 - bodyBox.left;
+        const py = pinBox.top + pinBox.height / 2 - bodyBox.top;
+
+        /* The card is parked against a panel edge rather than held a fixed
+           distance from the marker: the car fills the middle of the stage, so
+           hugging the marker drops the card onto the bodywork. Going to the
+           edge clears as much of the car as the panel allows and leaves a
+           lead line long enough to read.
+
+           The right edge is the default, matching the reference. It flips
+           only when the marker is so far right that the card would crowd or
+           cover it — a rule of "whichever half the marker is in" would send
+           the card skidding across the panel between two markers a few
+           percent apart, which reads as a fault.
+
+           What ties the card to the marker is therefore its vertical
+           position and the connector, not proximity. */
+        const rightLeft = bodyBox.width - cardW - EDGE;
+        const toRight = px + PIN_R + MIN_RUN <= rightLeft;
+        const left = toRight ? rightLeft : EDGE;
+        const top = Math.max(EDGE, Math.min(py - cardH / 2, bodyBox.height - cardH - EDGE));
+
+        const wasPlaced = card.style.left !== '';
+        const nextLeft = `${Math.round(left)}px`;
+        const nextTop = `${Math.round(top)}px`;
+        const moved = wasPlaced && (card.style.left !== nextLeft || card.style.top !== nextTop);
+
+        card.style.left = nextLeft;
+        card.style.top = nextTop;
+
+        if (moved && !reduce()) startGlide();
+        syncConnector();
+      };
+
+      /* The draw is a dash the length of the whole path, offset out of sight
+         and then pulled back in — the standard trick, and the reason the path
+         carries no dash pattern of its own. */
+      const drawConnector = (): void => {
+        if (!connectorPath || !connectorDot) return;
+        if (!connector?.classList.contains('is-on') || reduce()) return;
+        const len = connectorPath.getTotalLength();
+        gsap.fromTo(
+          [connectorPath, connectorHalo].filter(Boolean),
+          { strokeDasharray: len, strokeDashoffset: len },
+          { strokeDashoffset: 0, duration: 0.42, ease: 'power2.out',
+            clearProps: 'strokeDasharray,strokeDashoffset' },
+        );
+        gsap.fromTo(
+          connectorDot,
+          { scale: 0, transformOrigin: 'center' },
+          { scale: 1, duration: 0.3, ease: 'back.out(2)', delay: 0.24, clearProps: 'all' },
+        );
+      };
+
+      /* Closing runs the draw backwards, so the line retracts into the marker
+         it came out of instead of blinking away with the card. */
+      const retractConnector = (done: () => void): void => {
+        if (!connectorPath || !connectorDot) { done(); return; }
+        if (!connector?.classList.contains('is-on') || reduce()) { done(); return; }
+        const len = connectorPath.getTotalLength();
+        gsap.to(connectorDot, {
+          scale: 0, transformOrigin: 'center', duration: 0.14, ease: 'power2.in',
+        });
+        gsap.fromTo(
+          [connectorPath, connectorHalo].filter(Boolean),
+          { strokeDasharray: len, strokeDashoffset: 0 },
+          { strokeDashoffset: len, duration: 0.26, ease: 'power2.in', delay: 0.06,
+            onComplete: done },
+        );
       };
 
       const showPanel = (id: string | null): void => {
@@ -936,14 +1201,17 @@ const titleFor = (id: string): string => features.find((f) => f.id === id)?.titl
         if (reduce()) {
           showPanel(id);
           gsap.set(card, { clearProps: 'all' });
+          placeCard();
           return;
         }
 
         if (first) {
           showPanel(id);
+          placeCard();
+          drawConnector();
           gsap.fromTo(
             card,
-            { x: 36, opacity: 0, scale: 0.98 },
+            { x: 26, opacity: 0, scale: 0.96 },
             { x: 0, opacity: 1, scale: 1, duration: 0.5, ease: 'power3.out' },
           );
           gsap.fromTo(
@@ -957,7 +1225,11 @@ const titleFor = (id: string): string => features.find((f) => f.id === id)?.titl
           const outgoing = panels.find((p) => !p.hidden);
           const tl = gsap.timeline();
           if (outgoing) tl.to(outgoing, { opacity: 0, x: -16, duration: 0.16, ease: 'power2.in' });
-          tl.add(() => showPanel(id));
+          tl.add(() => {
+            showPanel(id);
+            placeCard();
+            drawConnector();
+          });
           tl.fromTo(
             panel,
             { opacity: 0, x: 22 },
@@ -972,14 +1244,30 @@ const titleFor = (id: string): string => features.find((f) => f.id === id)?.titl
         openFeature = null;
         syncPins();
 
-        const finish = (): void => {
+        /* Two steps, because the connector outlives the card by a beat: the
+           card goes first, then the line retracts behind it. Hiding the card
+           the moment its fade ends also stops an invisible panel from
+           swallowing clicks during the retract. */
+        const hideCard = (): void => {
           card.hidden = true;
           showPanel(null);
           gsap.set(card, { clearProps: 'all' });
+          card.style.left = '';
+          card.style.top = '';
+        };
+
+        const dropConnector = (): void => {
+          connector?.classList.remove('is-on');
+          const strokes = [connectorPath, connectorHalo].filter(Boolean);
+          if (strokes.length) {
+            gsap.set(strokes, { clearProps: 'strokeDasharray,strokeDashoffset' });
+          }
+          if (connectorDot) gsap.set(connectorDot, { clearProps: 'all' });
         };
 
         if (reduce()) {
-          finish();
+          hideCard();
+          dropConnector();
           return;
         }
         gsap.to(card, {
@@ -988,7 +1276,10 @@ const titleFor = (id: string): string => features.find((f) => f.id === id)?.titl
           scale: 0.98,
           duration: 0.28,
           ease: 'power2.in',
-          onComplete: finish,
+          onComplete: () => {
+            hideCard();
+            retractConnector(dropConnector);
+          },
         });
       };
 
