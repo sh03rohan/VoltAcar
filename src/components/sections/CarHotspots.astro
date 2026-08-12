@@ -1,143 +1,133 @@
 ---
 import { Image } from 'astro:assets';
 import Icon from '../common/Icon.astro';
+import Button from '../common/Button.astro';
 import carTop from '../../assets/images/hotspot-car.webp';
+import { hotspots } from '../../data/hotspots';
 
 /**
  * Annotated car diagram — Figma #48:60, reused on the Features page.
  *
- * A 1600x780 cream frame with an 860x464 stage centred inside it. Five
- * markers sit on the render, each with a card floating above it; every card's
- * centre lines up with its marker's centre.
+ * A 1600x780 cream frame with an 860x464 stage centred inside it. Five markers
+ * sit on the render at the frame's own coordinates, converted to percentages
+ * of the stage so everything scales as one and the dots stay locked to the
+ * render at any size.
  *
- * Departure from the Figma frame, at the client's request: the design shows
- * all five cards at once, but here only the glowing dots are visible and a
- * card is revealed on hover or focus. Positions are unchanged.
+ * Departures from the frame, at the client's request:
  *
- * Marker and card coordinates below are the raw Figma values inside that
- * 860x464 stage, converted to percentages so the whole diagram scales as one.
+ *   The frame draws all five cards at once. Here the dots are the resting
+ *   state and a *single* feature panel opens beside the car when one is
+ *   clicked — the small hover tooltips this section used to show are gone,
+ *   because a tooltip and a panel firing off the same dot compete.
+ *
+ *   Clicking, not hovering. Hover now only previews the marker; the panel is
+ *   a deliberate action, which is what lets it hold content worth reading and
+ *   stay open while the visitor looks back at the car.
+ *
+ * Panels are rendered server-side and hidden, so choosing a hotspot is a
+ * matter of which panel is shown rather than of copying strings around in
+ * JavaScript — and each image stays an optimised Astro asset. A hidden image
+ * is not fetched until it is displayed, so only the panels actually opened
+ * ever cost anything.
+ *
+ * There is no 3D model in this project and no turntable sequence, so the car
+ * is the frame's own top-down render. Everything below is independent of that:
+ * swapping in a WebGL viewer or a sprite sequence later means replacing the
+ * stage's contents and feeding the markers new coordinates — the panel, its
+ * animation and its data need no changes.
  */
 const STAGE_W = 860;
 const STAGE_H = 464;
 
-interface Hotspot {
-  title: string;
-  body: string;
-  /** Marker top-left within the stage. */
-  mx: number;
-  my: number;
-  /** Card top-left and width within the stage. */
-  cx: number;
-  cy: number;
-  cw: number;
-}
+const pct = (value: number, total: number): string => `${((value / total) * 100).toFixed(4)}%`;
 
-const hotspots: Hotspot[] = [
-  {
-    title: 'Panoramic Roof',
-    body: 'Expansive roof design for natural light, fresh air, and a feeling of openness.',
-    mx: 301, my: 123, cx: 226, cy: 19, cw: 195,
-  },
-  {
-    title: 'Effortless Rear Access',
-    body: 'Compact, Professional-Grade Imaging.',
-    mx: 546, my: 117, cx: 471, cy: 18, cw: 195,
-  },
-  {
-    title: 'Effortless Rear Access',
-    body: 'Smooth, wide-opening back door for easy entry and cargo loading.',
-    mx: 36, my: 191, cx: -38, cy: 87, cw: 195,
-  },
-  {
-    title: 'Sleek Side Entry',
-    body: 'Reinforced, quiet, and secure doors designed for convenience and safety.',
-    mx: 380, my: 328, cx: 305, cy: 196, cw: 195,
-  },
-  {
-    title: 'Premium Grip Tires',
-    body: 'Engineered for smooth handling on every road surface.',
-    mx: 695, my: 400, cx: 608.63, cy: 285, cw: 219,
-  },
-];
-
-const pct = (value: number, total: number): string =>
-  `${((value / total) * 100).toFixed(4)}%`;
-
-const MARKER = 46;
-const POINTER_H = 26.67;
-const POINTER_OVERLAP = 10; // Figma column gap of -10
-
-/**
- * Cards are anchored by their *bottom* edge, derived from the marker, rather
- * than by a top coordinate. A top coordinate silently assumes one fixed card
- * height, so any size change (as on small screens) drops the card onto its
- * dot. Bottom-anchoring keeps it above the dot at any height.
- *
- * The pointer tip should land on the marker's centre, and the tab overlaps the
- * card by 10px, so the card's bottom sits at:
- *   marker centre - (pointer height - overlap)
- */
-const anchorY = (my: number): number =>
-  my + MARKER / 2 - (POINTER_H - POINTER_OVERLAP);
-
-const centreX = (mx: number): number => mx + MARKER / 2;
+const panelId = (id: string): string => `hotspot-panel-${id}`;
 ---
 
-<section class="hotspots" data-hotspots>
-  <div class="hotspots__scroll">
-    <div class="hotspots__stage">
-    <Image
-      src={carTop}
-      alt="Top-down view of the VoltACar showing its roof, doors, and wheels"
-      widths={[860, 1200, 1720]}
-      sizes="860px"
-      loading="lazy"
-      decoding="async"
-      class="hotspots__car"
-    />
+<section class="hotspots" data-hotspots aria-labelledby="hotspots-title">
+  <h2 class="visually-hidden" id="hotspots-title">Explore the car</h2>
 
-    {
-      hotspots.map((h, i) => (
-        <>
-          <button
-            type="button"
-            class="pin"
-            data-pin
-            data-index={i}
-            aria-expanded="false"
-            aria-controls={`hotspot-${i}`}
-            style={`--x:${pct(h.mx, STAGE_W)};--y:${pct(h.my, STAGE_H)};--pin-delay:${i * 0.45}s`}
-          >
-            <span class="visually-hidden">{h.title}</span>
-            <span class="pin__core">
-              <Icon name="plus" size={20} />
-            </span>
-          </button>
+  <div class="hotspots__inner">
+    <div class="hotspots__scroll">
+      <div class="hotspots__stage" data-stage>
+        <Image
+          src={carTop}
+          alt="Top-down view of the VoltACar showing its roof, doors, and wheels"
+          widths={[860, 1200, 1720]}
+          sizes="860px"
+          loading="lazy"
+          decoding="async"
+          class="hotspots__car"
+        />
 
-          <div
-            class="card"
-            id={`hotspot-${i}`}
-            data-card
-            data-index={i}
-            style={`--x:${pct(h.cx, STAGE_W)};--w:${pct(h.cw, STAGE_W)};--anchor:${pct(anchorY(h.my), STAGE_H)}`}
-          >
-            <h3 class="card__title">{h.title}</h3>
-            <p class="card__body">{h.body}</p>
-          </div>
-
-          {/* Positioned against the stage, not the card, so it stays on the
-              marker regardless of the card's height or horizontal clamping. */}
-          <span
-            class="card__pointer"
-            data-pointer
-            data-index={i}
-            aria-hidden="true"
-            style={`--px:${pct(centreX(h.mx), STAGE_W)};--anchor:${pct(anchorY(h.my), STAGE_H)}`}
-          />
-        </>
-      ))
-    }
+        {
+          hotspots.map((h, i) => (
+            <button
+              type="button"
+              class="pin"
+              data-pin
+              data-index={i}
+              aria-expanded="false"
+              aria-controls={panelId(h.id)}
+              style={`--x:${pct(h.mx, STAGE_W)};--y:${pct(h.my, STAGE_H)};--pin-delay:${i * 0.45}s`}
+            >
+              <span class="visually-hidden">{`${h.category} — ${h.title}`}</span>
+              <span class="pin__core">
+                <Icon name="plus" size={20} />
+              </span>
+            </button>
+          ))
+        }
+      </div>
     </div>
+
+    {/* One panel frame; the six articles inside it are the content. `hidden`
+        on the frame keeps it out of the accessibility tree and the tab order
+        until something opens it. */}
+    <aside class="feature" data-feature hidden aria-label="Feature detail">
+      <button class="feature__close" type="button" data-feature-close>
+        <Icon name="close" size={18} />
+        <span class="visually-hidden">Close feature detail</span>
+      </button>
+
+      {
+        hotspots.map((h) => (
+          <article class="feature__panel" id={panelId(h.id)} data-feature-panel hidden>
+            <div class="feature__media">
+              <Image
+                src={h.image}
+                alt={h.imageAlt}
+                widths={[320, 520, 760]}
+                sizes="(max-width: 1200px) 92vw, 340px"
+                loading="lazy"
+                decoding="async"
+                class="feature__image"
+              />
+            </div>
+
+            <div class="feature__body">
+              <p class="feature__category">{h.category}</p>
+              <h3 class="feature__title">{h.title}</h3>
+              <p class="feature__desc">{h.description}</p>
+
+              {h.features && h.features.length > 0 && (
+                <ul class="feature__list" role="list">
+                  {h.features.map((item) => (
+                    <li>{item}</li>
+                  ))}
+                </ul>
+              )}
+
+              {h.learnMore && (
+                <div class="feature__cta">
+                  <Button label={h.learnMore.label} href={h.learnMore.href} variant="dark" size="sm" />
+                </div>
+              )}
+            </div>
+          </article>
+        ))
+      }
+    </aside>
   </div>
 </section>
 
@@ -152,26 +142,42 @@ const centreX = (mx: number): number => mx + MARKER / 2;
     background-color: var(--c-cream);
   }
 
+  /* The panel is positioned against this rather than the stage: the stage
+     slides sideways when a panel opens, and anything anchored to it would
+     travel too. */
+  .hotspots__inner {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    max-width: calc(var(--container) + var(--gutter) * 2);
+    margin-inline: auto;
+    padding-inline: var(--gutter);
+  }
+
   .hotspots__scroll {
     display: flex;
     justify-content: center;
     width: 100%;
     max-width: 100%;
-    padding-inline: var(--gutter);
   }
 
-  /* The stage shrinks to fit the viewport and everything inside it is sized in
-     cqw — percentages of the stage's own width — so the dots, cards, and glow
-     all scale together and stay locked to the same points on the render. The
-     diagram never needs horizontal scrolling. */
+  /* Everything inside is sized in cqw — percentages of the stage's own width —
+     so the dots and glow scale with the render and stay on the same points. */
   .hotspots__stage {
     container-type: inline-size;
     position: relative;
     flex: 0 1 auto;
     width: min(53.75rem, 100%); /* 860 */
     aspect-ratio: 860 / 464;
-    /* One card overhangs the stage by 38px (4.42%); leave room beside it. */
-    margin-inline: 4.42%;
+    /* Shifted by `.is-open` on the section when a panel opens, so the car
+       makes room instead of being covered. Transform only — no layout is
+       touched, and the markers travel with it. */
+    transition: transform 620ms var(--ease-out);
+  }
+
+  .hotspots.is-open .hotspots__stage {
+    transform: translateX(-20%);
   }
 
   .hotspots__car {
@@ -222,8 +228,7 @@ const centreX = (mx: number): number => mx + MARKER / 2;
   /* `animation: none` rather than paused — a running animation would beat a
      plain box-shadow declaration and the held state would never show. */
   .pin:hover,
-  .pin:focus-visible,
-  .pin[aria-expanded='true'] {
+  .pin:focus-visible {
     transform: scale(1.12);
     animation: none;
     box-shadow:
@@ -231,10 +236,42 @@ const centreX = (mx: number): number => mx + MARKER / 2;
       0 0 3.2558cqw 1.1628cqw rgba(255, 255, 255, 1);
   }
 
+  /* The selected marker holds a stronger state for as long as its panel is
+     open, so the card and the car always agree about what is being read. */
+  .pin[aria-expanded='true'] {
+    transform: scale(1.2);
+    animation: none;
+    box-shadow:
+      0 0 0 0.93cqw rgba(243, 254, 100, 0.42),
+      0 0 4.0698cqw 1.3953cqw rgba(255, 255, 255, 1);
+  }
+
+  .pin[aria-expanded='true'] .pin__core {
+    background-color: var(--c-primary);
+    color: var(--c-ink);
+    transform: rotate(45deg);
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .pin {
       animation: none;
       box-shadow: 0 0 1.6279cqw 0.3488cqw rgba(255, 255, 255, 0.6);
+    }
+  }
+
+  /* Below the container the dot is drawn at ~21px on a phone, which is under
+     the 24px minimum and well under a comfortable thumb. The drawn size is
+     right for the render, so the *hit area* is widened instead — invisible,
+     centred on the dot, and only where it is needed. */
+  @media (max-width: 1200px) {
+    .pin::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: max(100%, 2.75rem);
+      height: max(100%, 2.75rem);
+      transform: translate(-50%, -50%);
     }
   }
 
@@ -247,6 +284,10 @@ const centreX = (mx: number): number => mx + MARKER / 2;
     border-radius: 50%;
     /* The icon strokes use currentColor, so it inherits from here. */
     color: var(--c-primary);
+    transition:
+      background-color var(--dur) var(--ease-out),
+      color var(--dur) var(--ease-out),
+      transform var(--dur) var(--ease-out);
   }
 
   /* The <svg> is rendered by Icon.astro, so it carries that component's scope
@@ -256,126 +297,215 @@ const centreX = (mx: number): number => mx + MARKER / 2;
     height: 60%;
   }
 
-  /* ---------- Cards (#143:676 and siblings) ---------- */
+  /* ---------- Feature panel ---------- */
 
-  .card {
+  .feature {
     position: absolute;
-    left: var(--x);
-    /* Bottom edge sits just above the marker — see anchorY() above. */
-    bottom: calc(100% - var(--anchor));
-    width: var(--w);
+    top: 50%;
+    right: var(--gutter);
+    z-index: 4;
+    width: min(21.25rem, 30vw); /* 340 */
+    padding: var(--sp-16);
+    border-radius: var(--r-md);
+    background-color: var(--c-white);
+    box-shadow: var(--shadow-lg);
+    /* The resting state the script animates from and back to. `translateY` is
+       the centring, so the script only ever drives x, opacity and scale. */
+    transform: translateY(-50%);
+  }
+
+  .feature[hidden] {
+    display: none;
+  }
+
+  .feature__close {
+    position: absolute;
+    top: var(--sp-12);
+    right: var(--sp-12);
     z-index: 1;
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    border: 0;
+    border-radius: var(--r-pill);
+    background-color: rgba(19, 20, 0, 0.55);
+    color: var(--c-cream);
+    cursor: pointer;
+    transition:
+      background-color var(--dur-fast) var(--ease-out),
+      transform var(--dur-fast) var(--ease-out);
+  }
+
+  .feature__close:hover,
+  .feature__close:focus-visible {
+    background-color: var(--c-ink);
+    transform: scale(1.08);
+  }
+
+  .feature__panel[hidden] {
+    display: none;
+  }
+
+  .feature__media {
+    aspect-ratio: 16 / 10;
+    border-radius: var(--r-sm);
+    background-color: var(--c-cream);
+    overflow: hidden;
+  }
+
+  .feature__image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .feature__body {
     display: flex;
     flex-direction: column;
-    gap: 0.6977cqw; /* 6 — Figma #1caede89 */
-    padding: 1.3953cqw; /* 12 */
-    background-color: var(--c-white);
-    border-radius: 0.4651cqw; /* 4 */
-    box-shadow: var(--shadow-card);
-
-    /* Hidden until its dot is hovered or focused. Grows from the pointer tab
-       at the bottom, so it reads as unfolding out of the marker. */
-    opacity: 0;
-    visibility: hidden;
-    transform: translateY(0.93cqw) scale(0.94);
-    transform-origin: bottom center;
-    pointer-events: none;
-    transition:
-      opacity 220ms var(--ease-out),
-      transform 320ms cubic-bezier(0.34, 1.42, 0.64, 1),
-      visibility 320ms;
+    gap: var(--sp-8);
+    padding-top: var(--sp-16);
   }
 
-  .card.is-open {
-    opacity: 1;
-    visibility: visible;
-    transform: translateY(0) scale(1);
-    box-shadow: var(--shadow-lg);
-    z-index: 3;
+  .feature__category {
+    font-size: var(--fs-small);
+    font-weight: var(--fw-semibold);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--c-steel-text);
   }
 
-  /* 14px at the 860px stage, scaling with it. */
-  .card__title {
-    font-size: 1.6279cqw;
-    font-weight: var(--fw-medium);
-    line-height: 1.2;
+  .feature__title {
+    font-size: var(--fs-h6); /* 24 */
+    font-weight: var(--fw-bold);
+    line-height: var(--lh-heading);
     color: var(--c-ink);
   }
 
-  .card__body {
-    font-size: 1.6279cqw;
-    font-weight: var(--fw-regular);
+  .feature__desc {
+    font-size: var(--fs-body);
     line-height: var(--lh-body);
     color: var(--c-muted);
   }
 
-  /* The down-pointing tab. Sits on the marker's centre line, starting 10px
-     above the card's bottom edge so it overlaps the card exactly as the Figma
-     column gap of -10 does, with its tip reaching the marker centre. */
-  .card__pointer {
-    position: absolute;
-    left: var(--px);
-    top: calc(var(--anchor) - 1.1628cqw); /* 10 */
-    z-index: 2;
-    width: 2.7907cqw; /* 24 */
-    height: 3.1012cqw; /* 26.67 */
-    background-color: var(--c-white);
-    transform: translateX(-50%) scaleY(0.9);
-    transform-origin: top center;
-    clip-path: polygon(0 0, 100% 0, 50% 100%);
-
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
-    transition:
-      opacity 220ms var(--ease-out),
-      transform 320ms cubic-bezier(0.34, 1.42, 0.64, 1),
-      visibility 320ms;
+  .feature__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-8);
+    margin-top: var(--sp-8);
+    padding-left: var(--sp-20);
+    font-size: var(--fs-body);
+    line-height: var(--lh-body);
+    color: var(--c-ink);
   }
 
-  .card__pointer.is-open {
-    opacity: 1;
-    visibility: visible;
-    transform: translateX(-50%) scaleY(1);
+  .feature__list li::marker {
+    color: var(--c-steel-text);
   }
 
-  /* The image, the dots, and their reveal behaviour are the same everywhere —
-     the stage simply scales, and the dots stay locked to the render because
-     every position is a percentage of it.
-     The one thing that cannot scale indefinitely is the card's text: below a
-     ~700px stage a proportional card would set type at 5-6px. Since only one
-     card is ever open, giving it a readable fixed size cannot collide with
-     another card, so it is widened and clamped inside the stage instead. */
-  @media (max-width: 900px) {
+  .feature__cta {
+    margin-top: var(--sp-8);
+  }
+
+  /* ---------- Responsive ---------- */
+
+  /* Between 1100 and 1400 the container is no longer wide enough for a full
+     860 stage beside a panel, so the car steps further aside *and* scales
+     down. Transform only — the markers are inside the stage, so they scale
+     with it and stay on their points, and no layout is recalculated. */
+  @media (max-width: 1400px) {
+    .feature {
+      width: min(18.75rem, 32vw);
+      padding: var(--sp-12);
+    }
+
+    .hotspots.is-open .hotspots__stage {
+      transform: translateX(-19%) scale(0.9);
+    }
+  }
+
+  /* Below this a side panel and a usable car cannot share the width — at 1100
+     they still overlapped by 45px with the car already pushed to the viewport
+     edge. So the panel becomes a bottom sheet from here down: the car keeps
+     the full width, stays visible above it, and the close button lands within
+     thumb reach. */
+  @media (max-width: 1200px) {
     .hotspots {
       min-height: 0;
       padding-block: var(--section-gap);
     }
 
-    .card {
-      --card-w: min(15rem, 62vw);
-      width: var(--card-w);
-      left: clamp(0px, var(--x), calc(100% - var(--card-w)));
-      padding: 0.625rem;
-      gap: 0.25rem;
-      border-radius: var(--r-sm);
-      transform: translateY(0.5rem) scale(0.94);
+    /* The sheet owns the lower half, so the car never slides sideways here.
+       It does shrink: at 1024 a full-width stage is 464 tall and the space
+       above a 58svh sheet is 344, so the wheel marker sat behind the panel.
+       Scaling keeps the whole car — and every marker — in the clear. */
+    .hotspots.is-open .hotspots__stage {
+      transform: scale(0.62);
     }
 
-    .card.is-open {
-      transform: translateY(0) scale(1);
+    .feature {
+      position: fixed;
+      top: auto;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      max-height: 58svh;
+      padding: var(--sp-20) var(--gutter) calc(var(--sp-24) + env(safe-area-inset-bottom));
+      border-radius: var(--r-lg) var(--r-lg) 0 0;
+      transform: none;
+      overflow-y: auto;
+      overscroll-behavior: contain;
     }
 
-    .card__title,
-    .card__body {
-      font-size: 0.8125rem; /* 13 */
+    /* The sheet spans the viewport, but its contents should not: at 1024 a
+       full-width 16:9 image is 940x530 and swamps the copy it belongs to. */
+    .feature__panel {
+      width: min(34rem, 100%);
+      margin-inline: auto;
     }
 
-    /* Keep the tab a usable size once the stage is small. */
-    .card__pointer {
-      width: 1rem;
-      height: 1.125rem;
-      top: calc(var(--anchor) - 0.4rem);
+    /* The grab handle a sheet is expected to have. */
+    .feature::before {
+      content: '';
+      position: sticky;
+      top: 0;
+      display: block;
+      width: 2.5rem;
+      height: 4px;
+      margin: 0 auto var(--sp-16);
+      border-radius: var(--r-pill);
+      background-color: rgba(19, 20, 0, 0.18);
+    }
+
+    .feature__close {
+      top: var(--sp-16);
+      right: var(--gutter);
+      width: 2.25rem;
+      height: 2.25rem;
+    }
+
+    .feature__media {
+      aspect-ratio: 16 / 9;
+    }
+  }
+
+  /* On a phone the stage is already only ~190 tall, so it fits above the
+     sheet at full size and shrinking it would only make the markers harder
+     to hit. */
+  @media (max-width: 768px) {
+    .hotspots.is-open .hotspots__stage {
+      transform: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hotspots__stage,
+    .pin,
+    .pin__core,
+    .feature__close {
+      transition: none;
     }
   }
 </style>
@@ -386,55 +516,199 @@ const centreX = (mx: number): number => mx + MARKER / 2;
   const section = document.querySelector<HTMLElement>('[data-hotspots]');
 
   if (section) {
+    const stage = section.querySelector<HTMLElement>('[data-stage]');
     const pins = Array.from(section.querySelectorAll<HTMLButtonElement>('[data-pin]'));
-    const cards = Array.from(section.querySelectorAll<HTMLElement>('[data-card]'));
-    const pointers = Array.from(section.querySelectorAll<HTMLElement>('[data-pointer]'));
+    const feature = section.querySelector<HTMLElement>('[data-feature]');
+    const panels = Array.from(section.querySelectorAll<HTMLElement>('[data-feature-panel]'));
+    const closeBtn = section.querySelector<HTMLButtonElement>('[data-feature-close]');
 
-    const canHover = window.matchMedia('(hover: hover)').matches;
+    if (feature && panels.length) {
+      /** Index of the open hotspot, or -1. */
+      let current = -1;
+      const reduce = () => prefersReducedMotion();
+      /* Which layout is live, read from the panel itself rather than from a
+         copy of the breakpoint. The CSS switch moved from 768 to 1200 during
+         tuning and a duplicated media query here silently kept animating the
+         sheet on the wrong axis between the two. */
+      const isSheet = () => getComputedStyle(feature).position === 'fixed';
 
-    const setOpen = (index: number, open: boolean): void => {
-      const pin = pins[index];
-      const card = cards[index];
-      if (!pin || !card) return;
-      pin.setAttribute('aria-expanded', String(open));
-      card.classList.toggle('is-open', open);
-      pointers[index]?.classList.toggle('is-open', open);
-    };
+      /* The car steps aside so the panel is not laid over it. Driven by a
+         class rather than an inline transform, so each breakpoint can pick its
+         own shift-and-scale in CSS and the sheet layout can opt out entirely.
+         An inline style here would have overridden all three. */
+      const shiftStage = (open: boolean): void => {
+        section.classList.toggle('is-open', open);
+      };
 
-    const closeAll = (): void => pins.forEach((_, i) => setOpen(i, false));
+      /* On the sheet layout the panel covers the lower half of the screen, so
+         a marker tapped near the bottom of the car ends up behind it. Bring
+         the car into the clear space above rather than leaving the visitor
+         looking at a card for something they can no longer see. */
+      const revealStage = (): void => {
+        if (!isSheet() || !stage || reduce()) return;
 
-    pins.forEach((pin, index) => {
-      // Pointer. Only one card is ever open, so moving between dots swaps
-      // cleanly rather than leaving a trail of them open.
-      pin.addEventListener('mouseenter', () => {
-        closeAll();
-        setOpen(index, true);
+        const run = (): void => {
+          const r = stage.getBoundingClientRect();
+          /* The sheet is fixed to the bottom, so its top is derivable from its
+             height — which is right even while it is still sliding up. */
+          const sheetTop = window.innerHeight - feature.getBoundingClientRect().height;
+          const room = sheetTop - 16;
+          /* Sit the car's *bottom* just above the sheet rather than at a fixed
+             fraction of the viewport: a fraction works on a phone and leaves
+             the lowest marker covered on a tablet, where the stage is taller
+             relative to the space. Centre it when it comfortably fits. */
+          const top = r.height < room - 24 ? (room - r.height) / 2 : Math.max(12, room - r.height);
+          window.scrollBy({ top: Math.round(r.top - top), behavior: 'smooth' });
+        };
+
+        /* The stage scales over 620ms on this layout. Measuring mid-transition
+           reads a height that is about to change, and the scroll lands short —
+           it put the lowest marker behind the sheet at 1024. Wait for the
+           transition, with a timeout for the case where none fires because the
+           stage was already scaled. */
+        let done = false;
+        const once = (): void => {
+          if (done) return;
+          done = true;
+          stage.removeEventListener('transitionend', once);
+          run();
+        };
+        stage.addEventListener('transitionend', once);
+        window.setTimeout(once, 680);
+      };
+
+      const setPinState = (index: number): void => {
+        pins.forEach((pin, i) => pin.setAttribute('aria-expanded', String(i === index)));
+      };
+
+      /** Shows one panel and hides the rest, without touching animation. */
+      const showPanel = (index: number): void => {
+        panels.forEach((panel, i) => (panel.hidden = i !== index));
+      };
+
+      const open = (index: number): void => {
+        if (index === current) return;
+        const first = current === -1;
+        const panel = panels[index];
+        if (!panel) return;
+
+        current = index;
+        setPinState(index);
+        shiftStage(true);
+        feature.hidden = false;
+
+        if (reduce()) {
+          showPanel(index);
+          gsap.set(feature, { clearProps: 'all' });
+          revealStage();
+          return;
+        }
+
+        const enterFrom = isSheet() ? { yPercent: 100, opacity: 1 } : { x: 44, opacity: 0, scale: 0.98 };
+        const enterTo = isSheet()
+          ? { yPercent: 0, duration: 0.5, ease: 'power3.out' }
+          : { x: 0, opacity: 1, scale: 1, duration: 0.55, ease: 'power3.out' };
+
+        if (first) {
+          // Nothing was open: the frame itself arrives.
+          showPanel(index);
+          gsap.fromTo(feature, enterFrom, enterTo);
+          gsap.fromTo(
+            panel,
+            { opacity: 0, y: 12 },
+            { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out', delay: 0.12, clearProps: 'opacity,transform' },
+          );
+          /* After the panel is on the page — it is measured, not assumed, and
+             a hidden sheet measures zero. */
+          revealStage();
+        } else {
+          /* Already open on another hotspot. The frame stays put and only its
+             contents change — closing and reopening it would read as a glitch
+             rather than as a change of subject. */
+          const outgoing = panels.find((p) => !p.hidden);
+          const swap = gsap.timeline();
+          if (outgoing) {
+            swap.to(outgoing, { opacity: 0, x: -18, duration: 0.18, ease: 'power2.in' });
+          }
+          swap.add(() => showPanel(index));
+          swap.fromTo(
+            panel,
+            { opacity: 0, x: 26 },
+            { opacity: 1, x: 0, duration: 0.34, ease: 'power3.out', clearProps: 'opacity,transform' },
+          );
+          if (outgoing) swap.set(outgoing, { clearProps: 'opacity,transform' });
+        }
+      };
+
+      const close = (): void => {
+        if (current === -1) return;
+        const panel = panels[current];
+        current = -1;
+        setPinState(-1);
+        shiftStage(false);
+
+        const finish = (): void => {
+          feature.hidden = true;
+          panels.forEach((p) => (p.hidden = true));
+          gsap.set(feature, { clearProps: 'all' });
+          if (panel) gsap.set(panel, { clearProps: 'all' });
+        };
+
+        if (reduce()) {
+          finish();
+          return;
+        }
+
+        gsap.to(feature, {
+          ...(isSheet() ? { yPercent: 100 } : { x: 36, opacity: 0, scale: 0.98 }),
+          duration: 0.32,
+          ease: 'power2.in',
+          onComplete: finish,
+        });
+      };
+
+      pins.forEach((pin, index) => {
+        pin.addEventListener('click', () => {
+          // A second click on the open marker closes it, so the dot is a
+          // toggle rather than a one-way door.
+          if (index === current) close();
+          else open(index);
+        });
       });
-      pin.addEventListener('mouseleave', () => setOpen(index, false));
 
-      // Keyboard — the same reveal, so the content is not hover-only.
-      pin.addEventListener('focus', () => {
-        closeAll();
-        setOpen(index, true);
+      closeBtn?.addEventListener('click', close);
+
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && current !== -1) {
+          const pin = pins[current];
+          close();
+          pin?.focus();
+        }
       });
-      pin.addEventListener('blur', () => setOpen(index, false));
 
-      // Touch, where hover does not exist: tap toggles.
-      pin.addEventListener('click', (event) => {
-        if (canHover) return;
-        event.preventDefault();
-        const open = pin.getAttribute('aria-expanded') === 'true';
-        closeAll();
-        setOpen(index, !open);
+      /* Clicking away closes it — but only outside the section, so tapping the
+         car or another marker still works and the panel never blocks the
+         diagram it belongs to. */
+      document.addEventListener('pointerdown', (event) => {
+        if (current === -1) return;
+        const target = event.target as Node;
+        if (!section.contains(target)) close();
       });
-    });
 
-    document.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape') closeAll();
-    });
+      /* Crossing the sheet breakpoint changes which axis the panel animates
+         on, so any inline transform from the other layout has to go. */
+      let lastSheet = isSheet();
+      window.addEventListener('resize', () => {
+        const now = isSheet();
+        if (now === lastSheet) return;
+        lastSheet = now;
+        gsap.set(feature, { clearProps: 'all' });
+        shiftStage(current !== -1);
+      });
+    }
 
     if (!prefersReducedMotion()) {
-      // Markers pop in on scroll; the cards stay hidden until hovered.
+      // Markers pop in on scroll; the panel stays closed until one is clicked.
       gsap.fromTo(
         pins,
         { scale: 0, opacity: 0 },
@@ -445,7 +719,7 @@ const centreX = (mx: number): number => mx + MARKER / 2;
           ease: 'back.out(1.7)',
           stagger: 0.08,
           // Hand the transform back to CSS, otherwise the inline scale(1)
-          // left behind would beat the :hover rule.
+          // left behind would beat the :hover and active rules.
           clearProps: 'transform,opacity',
           scrollTrigger: { trigger: section, start: 'top 70%', once: true },
         },
