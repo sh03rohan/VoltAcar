@@ -7,7 +7,16 @@
  * files so they can inherit `currentColor` and be animated.
  */
 interface Props {
-  name: 'arrow' | 'chevron' | 'menu' | 'close' | 'plus' | 'calendar';
+  name:
+    | 'arrow'
+    | 'chevron'
+    | 'menu'
+    | 'close'
+    | 'plus'
+    | 'calendar'
+    | 'check'
+    | 'reset'
+    | 'drag';
   size?: number;
   class?: string;
 }
@@ -41,6 +50,26 @@ const viewBox = name === 'calendar' ? '0 0 24 24' : '0 0 20 20';
     )
   }
   {name === 'chevron' && <path d="M5 7.5 10 12.5 15 7.5" />}
+  {name === 'check' && <path d="M4.5 10.5 8 14l7.5-8" />}
+  {
+    /* A circular arrow — "return this to where it started". */
+    name === 'reset' && (
+      <>
+        <path d="M3.6 10a6.4 6.4 0 1 0 1.9-4.5" />
+        <path d="M3.2 3.2v3.4h3.4" />
+      </>
+    )
+  }
+  {
+    /* A hand with a motion arc, matching the drag hint in the design. */
+    name === 'drag' && (
+      <>
+        <path d="M8 9.2V4.6a1.2 1.2 0 0 1 2.4 0v4.1" />
+        <path d="M10.4 8.8V7.6a1.2 1.2 0 0 1 2.4 0v1.4" />
+        <path d="M12.8 9.2V8.4a1.2 1.2 0 0 1 2.4 0V13a4 4 0 0 1-4 4H10a3 3 0 0 1-2.3-1.1L5.2 13a1.2 1.2 0 0 1 1.7-1.7L8 12.4" />
+      </>
+    )
+  }
   {
     name === 'calendar' && (
       <>
