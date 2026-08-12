@@ -139,11 +139,15 @@ in short:
    host) or set up a full OAuth app. On Netlify with Identity, switch to
    `git-gateway`.
 
-To edit locally with no auth at all, run `npm run dev`, open `/admin/`, and
-choose **"Work with Local Repository"**. Sveltia reads and writes your working
-tree directly through the File System Access API — no proxy server to run, but
-it is Chromium-only. Changes land as ordinary file edits; review them with
-`git diff`.
+To edit locally with no auth at all, run `npm run dev`, open
+**`/admin/index.html`**, and choose **"Work with Local Repository"**. Sveltia
+reads and writes your working tree directly through the File System Access API
+— no proxy server to run, but it is Chromium-only. Changes land as ordinary
+file edits; review them with `git diff`.
+
+> The explicit `index.html` is only needed in dev: Astro's dev server serves
+> `public/` at exact paths and won't resolve `/admin/` to the directory index.
+> On the built site — and under `npm run preview` — plain `/admin/` works.
 
 ### Writing a post
 

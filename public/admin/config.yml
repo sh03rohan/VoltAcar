@@ -22,7 +22,13 @@
 # EDITING LOCALLY, WITHOUT AUTH
 #
 #   npm run dev
-#   open http://localhost:4321/admin/  →  "Work with Local Repository"
+#   open http://localhost:4321/admin/index.html
+#   →  "Work with Local Repository"
+#
+# Note the explicit index.html: Astro's *dev* server serves files from public/
+# at their exact path and does not resolve /admin/ to the directory index. The
+# built site does, so /admin/ is correct once deployed (and under
+# `npm run preview`).
 #
 # Sveltia asks you to pick this project's root folder and then reads and
 # writes it directly through the File System Access API. There is no proxy
