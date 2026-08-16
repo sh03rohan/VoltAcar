@@ -1222,11 +1222,13 @@ const titleFor = (id: string): string => features.find((f) => f.id === id)?.titl
        any text, which is the other thing stacking buys. */
     .card__media {
       width: 100%;
-      /* Kept low deliberately. A banner at the top of a stacked card is paid
-         for out of the checklist below it, and at 360 the difference between
-         this and a taller crop is whether the list starts on screen at all. */
-      height: clamp(3.75rem, 10vh, 6rem);
-      aspect-ratio: auto;
+      /* A ratio, not a viewport height: the crop then stays the same shape on
+         every phone instead of getting squarer on tall screens and slotlike
+         on short ones. No `max-height` with it — a ratio under a height cap
+         re-derives the *width*, which is what narrowed this picture once
+         before. The card's own cap is what protects the section. */
+      height: auto;
+      aspect-ratio: 5 / 2;
     }
 
     .card__category {
@@ -1234,11 +1236,17 @@ const titleFor = (id: string): string => features.find((f) => f.id === id)?.titl
     }
 
     .card {
-      /* A rem more than the two-column sheet needed. Stacking spends height on
-         the banner and wins some back from the wider text, but not all of it,
-         and this buys the first checklist row back into view. It comes out of
-         the stage, which can afford 16px more readily than the card can. */
-      max-height: 18rem;
+      /* Two rem more than the two-column sheet needed: stacking spends height
+         on the banner and wins some back from the wider text, but not all of
+         it, and this keeps the first checklist row in view alongside a picture
+         big enough to read the car in.
+
+         The `vh` half is not decoration. A flat rem cap is a fixed bite out of
+         a budget that is not fixed, so on a short phone the card takes the
+         same 300px out of a much smaller body and leaves the car a sliver —
+         measured, 47px at 360x640. Whichever is smaller keeps the split
+         sane at both ends. */
+      max-height: min(19rem, 40vh);
       padding: var(--sp-12);
     }
 
