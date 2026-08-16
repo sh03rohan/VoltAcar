@@ -189,6 +189,12 @@ const titleFor = (id: string): string => features.find((f) => f.id === id)?.titl
             </article>
           ))
         }
+
+        {/* The card scrolls with no scrollbar, so something has to say there
+            is more below. Last child and sticky, so it rides the foot of the
+            scrollport; the script shows it only while there is somewhere left
+            to scroll. */}
+        <span class="card__fade" data-card-fade aria-hidden="true"></span>
       </aside>
     </div>
 
@@ -694,23 +700,14 @@ const titleFor = (id: string): string => features.find((f) => f.id === id)?.titl
     border: 1px solid rgba(19, 20, 0, 0.08);
     border-radius: var(--r-md);
     box-shadow: var(--shadow-lg);
+    background-color: var(--c-white);
 
     /* A car and a full spec card do not both fit on a 780px phone, so the
-       card scrolls — and a scrolling box with a hard edge reads as broken
-       text rather than as more text. These four layers are the standard
-       scroll shadow: the two `local` covers travel with the content and mask
-       the two fixed shadows whenever the card is already at that end, so the
-       cue appears only on the side there is actually more to see. */
-    background:
-      linear-gradient(var(--c-white) 30%, rgba(255, 255, 255, 0)) top / 100% 1.5rem no-repeat
-        local,
-      linear-gradient(rgba(255, 255, 255, 0), var(--c-white) 70%) bottom / 100% 1.5rem no-repeat
-        local,
-      radial-gradient(farthest-side at 50% 0, rgba(19, 20, 0, 0.14), rgba(19, 20, 0, 0)) top /
-        100% 0.5rem no-repeat scroll,
-      radial-gradient(farthest-side at 50% 100%, rgba(19, 20, 0, 0.14), rgba(19, 20, 0, 0))
-        bottom / 100% 0.5rem no-repeat scroll,
-      var(--c-white);
+       card scrolls. The bar itself is hidden — it lands over the checklist on
+       a card this narrow and is the loudest thing in it — and `.card__fade`
+       below carries the cue instead. Hiding it costs no scrolling: touch,
+       wheel and keyboard are untouched. */
+    scrollbar-width: none;
     /* Moving between two markers is a glide, not a jump. Nothing transitions
        on the first open: the card comes out of `display: none`, and an element
        that was not rendered has no old value to animate from. Reduced motion
@@ -720,9 +717,37 @@ const titleFor = (id: string): string => features.find((f) => f.id === id)?.titl
       top 420ms var(--ease-out);
   }
 
+  .card::-webkit-scrollbar {
+    display: none;
+  }
+
   .card[hidden],
   .card__panel[hidden] {
     display: none;
+  }
+
+  /* The scroll cue. `sticky` resolves against the scroll container, so it
+     rides the foot of the card's scrollport while the panels move underneath.
+     The negative margin keeps it out of the height it is reporting on, and
+     the gradient runs to solid white so it meets the card's own padding with
+     no seam. Understated on purpose: it is a hint that the list continues,
+     not a rule under it. */
+  .card__fade {
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    display: block;
+    height: 2.25rem;
+    margin-top: -2.25rem;
+    background: linear-gradient(to top, var(--c-white) 22%, rgba(255, 255, 255, 0));
+    opacity: 0;
+    transition: opacity var(--dur-fast) var(--ease-out);
+    pointer-events: none;
+  }
+
+  /* Set by the script, and only while there is somewhere left to scroll. */
+  .card[data-more='true'] .card__fade {
+    opacity: 1;
   }
 
   .card__close {
@@ -1180,16 +1205,40 @@ const titleFor = (id: string): string => features.find((f) => f.id === id)?.titl
       border-radius: var(--r-lg);
     }
 
-    /* A small square thumbnail rather than a third of the sheet's width. The
-       picture is decoration; the description and the spec list are what the
-       marker was clicked for, and on a phone they need the room. */
+    /* Stacked on phones: picture across the top, then the words under it, in
+       reading order. The two-column sheet above buys its height by giving the
+       text a 200px column, which is where the description and every checklist
+       row start wrapping — stacked, the same words get the card's full width
+       and take fewer lines back, so most of the picture's height is paid for
+       rather than added. Unset rather than overridden, so the block flow the
+       anchored card already uses comes back. */
     .card__panel {
-      grid-template-columns: 4.5rem minmax(0, 1fr);
-      gap: var(--sp-12);
+      display: block;
+    }
+
+    /* A banner across the top, not the column-width square the two-column
+       sheet made of it. Short, because on a phone the checklist is what the
+       marker was tapped for. The close button lands on this rather than on
+       any text, which is the other thing stacking buys. */
+    .card__media {
+      width: 100%;
+      /* Kept low deliberately. A banner at the top of a stacked card is paid
+         for out of the checklist below it, and at 360 the difference between
+         this and a taller crop is whether the list starts on screen at all. */
+      height: clamp(3.75rem, 10vh, 6rem);
+      aspect-ratio: auto;
+    }
+
+    .card__category {
+      margin-top: var(--sp-12);
     }
 
     .card {
-      max-height: 17rem;
+      /* A rem more than the two-column sheet needed. Stacking spends height on
+         the banner and wins some back from the wider text, but not all of it,
+         and this buys the first checklist row back into view. It comes out of
+         the stage, which can afford 16px more readily than the card can. */
+      max-height: 18rem;
       padding: var(--sp-12);
     }
 
@@ -1517,8 +1566,22 @@ const titleFor = (id: string): string => features.find((f) => f.id === id)?.titl
         );
       };
 
+      /* The card scrolls with its scrollbar hidden, so the fade at its foot is
+         the only thing reporting that there is more below. It is toggled, not
+         left on: a permanent fade implies content that may not be there, and
+         once you are at the bottom it is just a smudge over the last row. */
+      const syncScrollCue = (): void => {
+        const more = card.scrollHeight - card.clientHeight - card.scrollTop > 4;
+        card.dataset.more = more ? 'true' : 'false';
+      };
+
       const showPanel = (id: string | null): void => {
         panels.forEach((p) => (p.hidden = p.dataset.cardPanel !== id));
+        /* A new subject starts at its own top. Carrying the old scroll offset
+           over drops the visitor into the middle of a card they have not
+           read, and leaves the cue describing the panel that just left. */
+        card.scrollTop = 0;
+        syncScrollCue();
       };
 
       const syncPins = (): void => {
@@ -1770,6 +1833,12 @@ const titleFor = (id: string): string => features.find((f) => f.id === id)?.titl
          having decoded and on the stage's size. Both are waited for rather
          than assumed. */
       new ResizeObserver(() => placePins()).observe(viewport);
+
+      /* Whether there is more to scroll changes with the card's own size, not
+         the stage's — a rotation or a font swap can reflow the copy past the
+         cap without the viewport moving at all. */
+      new ResizeObserver(() => syncScrollCue()).observe(card);
+      card.addEventListener('scroll', syncScrollCue, { passive: true });
 
       images.forEach((img) => {
         if (img.complete) return;
