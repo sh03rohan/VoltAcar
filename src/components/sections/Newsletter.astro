@@ -192,7 +192,9 @@ const action = forms.newsletter || undefined;
     color: var(--c-cream);
     font-size: var(--fs-body);
     line-height: var(--lh-body);
-    transition: border-color var(--dur-fast) var(--ease-out);
+    transition:
+      border-color var(--dur-fast) var(--ease-out),
+      box-shadow var(--dur-fast) var(--ease-out);
   }
 
   /* The Figma placeholder is full-strength cream, not a dimmed hint — the
@@ -202,21 +204,53 @@ const action = forms.newsletter || undefined;
     opacity: 1;
   }
 
-  .field__input:hover {
+  .field__input:hover:not(:focus-visible) {
     border-color: var(--c-cream);
   }
 
+  /* Without this the field falls through to the global `:focus-visible`
+     outline, which flips to the lime accent on a dark section — a 3px ring
+     standing 3px off a pill that already has a border of its own, and the one
+     text input on the site not focusing the way the others do.
+
+     This is the booking form's treatment (TextField.astro): suppress the
+     outline and double the field's own hairline instead. Cream is what plays
+     ink's part against a dark ground, and it is already the hover colour, so
+     focus deepens that state rather than swapping to an unrelated one — same
+     relationship the light fields have. Cream on ink is the strongest pair in
+     the palette, and border plus ring reads 2px, so the indicator is well
+     inside both the 3:1 contrast and the 2px thickness that focus needs. */
+  .field__input:focus-visible {
+    outline: none;
+    border-color: var(--c-cream);
+    box-shadow: 0 0 0 1px var(--c-cream);
+  }
+
+  /* Doubled the same way focus is, and last, so a field that is both invalid
+     and focused reads as the error rather than as one signal wearing the
+     other's ring. The booking form resolves the pair the same way. */
   .field__input[aria-invalid='true'] {
     border-color: var(--c-error);
+    box-shadow: 0 0 0 1px var(--c-error);
   }
 
   /* Autofill would otherwise repaint the pill in the browser's own pale
      yellow, which is unreadable against cream text. */
   .field__input:-webkit-autofill,
-  .field__input:-webkit-autofill:hover,
-  .field__input:-webkit-autofill:focus {
+  .field__input:-webkit-autofill:hover {
     -webkit-text-fill-color: var(--c-cream);
     box-shadow: 0 0 0 100px var(--c-ink) inset;
+  }
+
+  /* The focused case needs saying separately. That inset fill occupies
+     `box-shadow`, which is the same property the focus ring above uses, and
+     this rule is both later and equally specific — so an autofilled field
+     would take the fill and quietly lose its focus ring. It carries both. */
+  .field__input:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--c-cream);
+    box-shadow:
+      0 0 0 1px var(--c-cream),
+      0 0 0 100px var(--c-ink) inset;
   }
 
   .field__msg {
