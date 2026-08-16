@@ -46,12 +46,21 @@ export const social: { label: string; href: string; icon: SocialIconName }[] = [
   { label: 'YouTube', href: 'https://youtube.com/', icon: 'youtube' },
 ];
 
-/** Header navigation. Mirrors the Figma header (#266:194). */
+/**
+ * Header navigation. Follows the Figma header (#266:194) with one deliberate
+ * departure: the frame lists Blog both as a top-level link and again inside
+ * Others, and only the one in Others is kept. Two routes to the same page,
+ * one of them visible while the other is a click deep, reads as an oversight
+ * in the design rather than a shortcut.
+ *
+ * Nothing else needs to know. `isBranchCurrent` in Header.astro already
+ * lights the Others trigger when any of its children is the current page, so
+ * /blog and /blog/<slug> still mark the header.
+ */
 export const navigation: NavLink[] = [
   { label: 'Home', href: '/' },
   { label: 'Features', href: '/features' },
   { label: 'About us', href: '/about-us' },
-  { label: 'Blog', href: '/blog' },
   { label: 'Test Drive', href: '/test-drive' },
   {
     label: 'Others',

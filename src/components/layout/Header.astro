@@ -133,19 +133,40 @@ const isBranchCurrent = (link: (typeof navigation)[number]): boolean =>
             navigation.map((link) =>
               link.children ? (
                 <li>
+                  {/* Open on arrival when the page you are on lives inside it.
+                      Otherwise a visitor on /blog opens the drawer to a list
+                      with nothing marked, because the only mention of where
+                      they are is folded away. The script reads `aria-expanded`
+                      off the DOM, so starting open needs nothing else. */}
                   <button
                     type="button"
-                    class="drawer__link drawer__disclosure"
-                    aria-expanded="false"
+                    class:list={[
+                      'drawer__link',
+                      'drawer__disclosure',
+                      isBranchCurrent(link) && 'is-current',
+                    ]}
+                    aria-expanded={isBranchCurrent(link) ? 'true' : 'false'}
                     data-disclosure
                   >
                     {link.label}
                     <Icon name="chevron" size={20} />
                   </button>
-                  <ul class="drawer__sub" role="list" data-disclosure-panel hidden>
+                  <ul
+                    class="drawer__sub"
+                    role="list"
+                    data-disclosure-panel
+                    hidden={!isBranchCurrent(link)}
+                  >
                     {link.children.map((child) => (
                       <li>
-                        <a class="drawer__sublink" href={child.href}>
+                        <a
+                          class:list={[
+                            'drawer__sublink',
+                            isCurrent(child.href) && 'is-current',
+                          ]}
+                          href={child.href}
+                          aria-current={isCurrent(child.href) ? 'page' : undefined}
+                        >
                           {child.label}
                         </a>
                       </li>
@@ -160,6 +181,7 @@ const isBranchCurrent = (link: (typeof navigation)[number]): boolean =>
                       isCurrent(link.href) && 'is-current',
                     ]}
                     href={link.href}
+                    aria-current={isCurrent(link.href) ? 'page' : undefined}
                   >
                     {link.label}
                   </a>
@@ -443,6 +465,7 @@ const isBranchCurrent = (link: (typeof navigation)[number]): boolean =>
     transition: color var(--dur-fast) var(--ease-out);
   }
 
+  .drawer__sublink.is-current,
   .drawer__sublink:hover {
     color: var(--c-primary);
   }
