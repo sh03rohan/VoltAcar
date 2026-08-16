@@ -65,7 +65,10 @@ const stats = [
   .hero {
     position: relative;
     display: flex;
-    min-height: 50rem; /* 800 */
+    /* Figma #13:82. Named because the render's placement is derived from it
+       below — change one and the other has to follow. */
+    --band-h: 50rem; /* 800 */
+    min-height: var(--band-h);
     color: var(--c-cream);
     /* The render covers the whole band on desktop, but the narrow layout
        leaves ink above the strip — without this the scrim would composite
@@ -83,33 +86,43 @@ const stats = [
     z-index: 0;
   }
 
-  /* Default: a normal cover fit, framed on the car. */
+  /* Figma #14:86 places the render 2033x1053 at (0, -118) in the 1600x800
+     band — a 127% zoom with 118px cropped off the top and 135 off the bottom.
+     Both crops carry the composition: the top one keeps the bright sky out,
+     and the bottom one is what leaves the car standing clear of the band's
+     lower edge rather than sitting on it.
+
+     This used to be gated at 1400px, with a plain `cover` fit underneath,
+     because a crop measured off the *width* runs out of height once the
+     viewport is narrower than about 1396 and stops covering an 800px band.
+     But cover re-frames everything — measured at 1366 it enlarged the car by
+     a third and walked it left into the headline — so the band lost the
+     design's composition at exactly the widths most laptops use.
+
+     Measuring off the band's height instead keeps the framing at any width.
+     The render is held at 2.5412 x the band height, which is the same 2033px
+     when the band is 800, and the horizontal anchor slides so the car stays
+     at the same fraction across the band. At 1600 both terms meet and this
+     resolves to the frame's own numbers; wider, the width term takes over so
+     the render still reaches the far edge. */
   .hero__image {
+    /* 2033 / 800 — the render's width expressed against the band's height. */
+    --img-w: calc(var(--band-h) * 2.5412);
+    /* Where the frame cuts the render on the right: 1600 of its 2033, which
+       is 2x the band height. Holding that edge is what keeps the car whole. */
+    --img-right: calc(var(--band-h) * 2);
+
     position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    object-position: 58% 45%;
-  }
-
-  /* Figma #14:86 places the render 2033px wide (127% of the 1600 frame) at
-     x=0, y=-118. Reproducing that exactly matters: it frames the car right of
-     centre and keeps the bright sun on the right of the source cropped out,
-     which is what makes the scene read as dark.
-
-     The proportional crop only covers an 800px-tall hero once the viewport is
-     wide enough (1.27 x vw / 1.929 aspect >= 918px), hence the 1400px gate. */
-  @media (min-width: 1400px) {
-    .hero__image {
-      inset: auto;
-      top: -14.75%; /* -118 / 800 */
-      left: 0;
-      width: 127%;
-      height: auto;
-      max-width: none;
-      object-fit: fill;
-    }
+    top: -14.75%; /* -118 / 800 */
+    /* Narrower than the frame, the crop comes off the *left* — the empty
+       hillside — because the frame's own right-hand cut is what sets where
+       the car sits. Anchoring the car's centre instead reads fine until the
+       band is narrow enough that its rear wheel leaves the frame, which at
+       1200 it did. Zero at 1600, so the frame's placement is exact there. */
+    left: min(0px, calc(100% - var(--img-right)));
+    width: max(127.0625%, var(--img-w)); /* 2033 / 1600 */
+    height: auto;
+    max-width: none;
   }
 
   /* radial-gradient(circle at 57% 56%, ...) — Figma #14:86 */

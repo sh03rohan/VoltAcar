@@ -100,8 +100,13 @@ const vars = {
   imgWidth: `${imageWidth}%`,
   imgLeft: `${imageLeft}%`,
   imgTop: `${imageTop}%`,
-  /* Covers the band even where the proportional crop has become too short. */
-  imgMinHeight: `${100 - imageTop}%`,
+  /* The same render width, measured against the band's *height* instead of
+     its width: the frame's image is `imageWidth`% of 1600 in a band 780 tall,
+     so this is that width restated as a multiple of the band height. Below
+     1600 it is the larger of the two and takes over, which is what stops the
+     crop shrinking out from under an 780px band. See the note in the
+     stylesheet for why that matters. */
+  imgWidthFloor: `calc(var(--banner-h) * ${((imageWidth * 16) / 780).toFixed(5)})`,
   imgFocus: imageFocus,
   imgFocusNarrow: imageFocusNarrow,
   copyWidth: `${copyWidth / 16}rem`,
@@ -184,14 +189,30 @@ const vars = {
     z-index: 0;
   }
 
+  /* The frame's image rect, held at every width.
+
+     This used to keep the width proportional and hang a `min-height` off it
+     so the render still covered the band once the proportional crop grew too
+     short. It covered, but at a cost: a box taller than the picture's own
+     ratio makes `cover` scale the picture up and crop it, so below 1600 every
+     one of these bands was quietly zoomed — measured, 25% oversized on the
+     about and blog heroes at 1280, 18% on features. Enlarging the render
+     walks its subject down and out of the band, which is how a car that
+     stands clear of the frame's lower edge ends up sitting on it.
+
+     Taking the floor off the band's *height* instead keeps the picture at its
+     own ratio, so the frame's placement survives at any width and there is
+     nothing left for `cover` to zoom. Wider than 1600 the proportional term
+     is the larger and still governs, so nothing changes there. */
   .page-hero__image {
     position: absolute;
     top: var(--imgTop);
     left: var(--imgLeft);
-    width: var(--imgWidth);
+    width: max(var(--imgWidth), var(--imgWidthFloor));
     height: auto;
-    min-height: var(--imgMinHeight);
     max-width: none;
+    /* Only bites in the narrow layout below, where the render becomes a
+       fixed-height strip and the box stops matching the picture's ratio. */
     object-fit: cover;
     object-position: var(--imgFocus);
   }
