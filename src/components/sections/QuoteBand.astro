@@ -101,7 +101,13 @@ const {
   .quote__text {
     max-width: 57.625rem; /* 922 */
     margin: 0;
-    font-size: var(--fs-h4); /* 36 */
+    /* The global H4 curve bottoms out at 28px, which on a phone turns this
+       quote into ten lines and a 364px wall of type. A steeper ramp of its
+       own starts it at 24 instead and catches up with the token by about
+       700px, so this is a phone-only correction — the ceiling is `--fs-h4`
+       itself, so the band can never outgrow the scale, and from tablet up the
+       size is exactly what it was. */
+    font-size: clamp(1.5rem, 0.9rem + 2.45vw, var(--fs-h4)); /* 24 → 36 */
     font-weight: var(--fw-medium);
     line-height: var(--lh-heading);
     color: var(--c-primary);
